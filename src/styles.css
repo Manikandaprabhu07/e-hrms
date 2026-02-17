@@ -1,0 +1,113 @@
+/* Carbon Design System Styles */
+@import "@carbon/styles/css/styles.css";
+
+/* Override with your custom styles */
+:root {
+  /* Carbon Design Tokens */
+  --cds-ui-01: #f4f4f4;
+  --cds-ui-02: #ffffff;
+  --cds-ui-03: #e0e0e0;
+  --cds-text-01: #161616;
+  --cds-text-02: #525252; 
+  --cds-interactive-01: #0f62fe;
+  --cds-interactive-02: #393939;
+  --cds-danger: #da1e28;
+  --cds-success: #24a148;
+  --cds-warning: #f1c21b;
+  --cds-info: #0043ce;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'IBM Plex Sans', Arial, sans-serif;
+  background: url('/assets/images/loginbg.jpg') no-repeat center center fixed;
+  background-size: cover;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(175, 115, 30, 0.2);
+  /* Lite tint similar to navbar */
+  backdrop-filter: blur(5px);
+  /* Lite blur */
+  -webkit-backdrop-filter: blur(5px);
+  z-index: -1;
+}
+
+/* Frosted glass effect for all cards and containers */
+.card,
+.content-card,
+.data-table-container,
+.stats-card,
+.table-container,
+.form-container,
+.dashboard-card {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Tables with transparency */
+table,
+.table,
+.data-table {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Table headers */
+thead,
+th {
+  background: rgba(79, 70, 229, 0.85) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: white !important;
+}
+
+/* Table rows */
+tbody tr {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(249, 250, 251, 0.7) !important;
+}
+
+tbody tr:hover {
+  background: rgba(243, 244, 246, 0.85) !important;
+}
+
+/* Input fields with transparency */
+input,
+textarea,
+select {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* Ensure text is always readable */
+body,
+.text-primary,
+.table td,
+.table th,
+label,
+p,
+span,
+div {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
