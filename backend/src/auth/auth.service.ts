@@ -1,0 +1,58 @@
+import { Injectable, ConflictException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { UsersService } from '../users/users.service';
+import * as bcrypt from 'bcrypt';
+import { RolesService } from '../access/roles.service';
+
+@Injectable()
+export class AuthService {
+    constructor(
+        private usersService: UsersService,
+        private jwtService: JwtService,
+        private rolesService: RolesService,
+    ) { }
+
+    async validateUser(emailOrUsername: string, pass: string): Promise<any> {
+        const user = await this.usersService.findOneByEmailOrUsername(emailOrUsername);
+        if (user && await bcrypt.compare(pass, user.password)) {
+            const { password, ...result } = user;
+            return result;
+        }
+        return null;
+    }
+
+    async login(user: any) {
+        const roles = user.roles || [];
+        const payload = { email: user.email, sub: user.id, roles: roles.map((r: any) => r.name) };
+        return {
+            accessToken: this.jwtService.sign(payload),
+            expiresIn: 3600,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                roles: roles,
+            },
+        };
+    }
+
+    async register(userData: any) {
+        const existingUser = await this.usersService.findOneByEmail(userData.email);
+        if (existingUser) {
+            throw new ConflictException('Email already exists');
+        }
+
+        const hashedPassword = await bcrypt.hash(userData.password, 10);
+        const employeeRole = await this.rolesService.findByName('EMPLOYEE');
+        const user = await this.usersService.create({
+            ...userData,
+            password: hashedPassword,
+            roles: employeeRole ? [employeeRole] : [],
+        });
+
+        const { password, ...result } = user;
+        return result;
+    }
+}
