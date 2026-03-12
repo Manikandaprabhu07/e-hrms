@@ -32,6 +32,26 @@ e-hrms/
 ```
 
 ---
+## 📸 Project Screenshots
+### Login page 
+<img width="1920" height="1080" alt="Screenshot 2026-03-12 213515" src="https://github.com/user-attachments/assets/e8bbd77f-b264-4345-bd86-96bc360db980" />
+### Admin Login Dashboard
+<img width="1920" height="1080" alt="Screenshot 2026-03-12 213536" src="https://github.com/user-attachments/assets/3f4fc208-fcf4-41b5-b25b-981596ab537a" />
+### Employee Login Dashboard
+<img width="1920" height="1080" alt="Screenshot (151)" src="https://github.com/user-attachments/assets/4a35ada7-70b7-4113-9d78-e710c769d1c3" />
+
+### All Others
+<img width="1920" height="1080" alt="Screenshot (149)" src="https://github.com/user-attachments/assets/11774055-705a-4234-b322-8efaa024dd5f" />
+<img width="1920" height="1080" alt="Screenshot (148)" src="https://github.com/user-attachments/assets/c8ad81b3-6f8d-4b6e-81f2-08a22a2cbd09" />
+<img width="1920" height="1080" alt="Screenshot (147)" src="https://github.com/user-attachments/assets/dbfcf45a-7924-49dd-a449-8772c09500ef" />
+<img width="1920" height="1080" alt="Screenshot (146)" src="https://github.com/user-attachments/assets/9b86e9f7-5011-45cf-9d24-fa0b089559cd" />
+<img width="1920" height="1080" alt="Screenshot (145)" src="https://github.com/user-attachments/assets/036ba84e-b41f-43be-897c-90215f4b3ab0" />
+<img width="1920" height="1080" alt="Screenshot (144)" src="https://github.com/user-attachments/assets/15d82903-126d-473a-8e8d-4ac410691f87" />
+<img width="1920" height="1080" alt="Screenshot (143)" src="https://github.com/user-attachments/assets/f825a46a-dcf3-443f-af30-fd11fb4214c6" />
+<img width="1920" height="1080" alt="Screenshot (142)" src="https://github.com/user-attachments/assets/0778203a-163d-4ca8-a44b-5b1c58e37e9b" />
+<img width="1920" height="1080" alt="Screenshot (150)" src="https://github.com/user-attachments/assets/067d3f4e-e004-4262-b0fc-4181e405d924" />
+
+**This is the basics screenshots of project**
 
 ## 🚀 Features
 
