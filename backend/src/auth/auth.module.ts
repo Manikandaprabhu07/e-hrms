@@ -15,12 +15,17 @@ import { AccessModule } from '../access/access.module';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET')!,
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRATION') as any,
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const expiresIn = configService.get<string>('JWT_EXPIRES_IN') || '1d';
+
+        return {
+          secret: configService.get<string>('JWT_SECRET'),
+          signOptions: {
+            // jwt expects a StringValue (from jsonwebtoken types). cast to satisfy TS.
+            expiresIn: expiresIn as any,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],
