@@ -1,6 +1,7 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { RolesService } from '../access/roles.service';
 
@@ -9,6 +10,7 @@ export class AuthService {
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
+        private configService: ConfigService,
         private rolesService: RolesService,
     ) { }
 
@@ -24,8 +26,15 @@ export class AuthService {
     async login(user: any) {
         const roles = user.roles || [];
         const payload = { email: user.email, sub: user.id, roles: roles.map((r: any) => r.name) };
+
+        const jwtSecret = this.configService.get<string>('JWT_SECRET');
+        if (!jwtSecret) {
+            throw new InternalServerErrorException('JWT secret not configured. Set JWT_SECRET in your environment variables.');
+        }
+
         return {
             accessToken: this.jwtService.sign(payload, {
+                secret: jwtSecret,
                 expiresIn: '1d',   // 🔥 HARDCODE FOR NOW
             }),
             expiresIn: 3600,
