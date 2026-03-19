@@ -1,11 +1,13 @@
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { ConfigService } from '@nestjs/config';
 import { RolesService } from '../access/roles.service';
 export declare class AuthService {
     private usersService;
     private jwtService;
+    private configService;
     private rolesService;
-    constructor(usersService: UsersService, jwtService: JwtService, rolesService: RolesService);
+    constructor(usersService: UsersService, jwtService: JwtService, configService: ConfigService, rolesService: RolesService);
     validateUser(emailOrUsername: string, pass: string): Promise<any>;
     login(user: any): Promise<{
         accessToken: string;

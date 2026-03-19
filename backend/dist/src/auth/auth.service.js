@@ -49,6 +49,7 @@ const users_service_1 = require("../users/users.service");
 const config_1 = require("@nestjs/config");
 const bcrypt = __importStar(require("bcrypt"));
 const roles_service_1 = require("../access/roles.service");
+const jwt_secret_1 = require("./jwt-secret");
 let AuthService = class AuthService {
     constructor(usersService, jwtService, configService, rolesService) {
         this.usersService = usersService;
@@ -67,9 +68,12 @@ let AuthService = class AuthService {
     async login(user) {
         const roles = user.roles || [];
         const payload = { email: user.email, sub: user.id, roles: roles.map((r) => r.name) };
-        const jwtSecret = this.configService.get('JWT_SECRET');
-        if (!jwtSecret) {
-            throw new common_1.InternalServerErrorException('JWT secret not configured. Set JWT_SECRET in your environment variables.');
+        let jwtSecret;
+        try {
+            jwtSecret = (0, jwt_secret_1.getJwtSecret)(this.configService);
+        }
+        catch (e) {
+            throw new common_1.InternalServerErrorException(e?.message ?? 'JWT secret not configured.');
         }
         return {
             accessToken: this.jwtService.sign(payload, {

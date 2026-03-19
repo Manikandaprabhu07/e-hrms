@@ -33,6 +33,27 @@ import { SeedService } from './seed/seed.service';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const databaseUrl = configService.get<string>('DATABASE_URL');
+        const parseBool = (value: unknown): boolean | undefined => {
+          if (value === undefined || value === null) return undefined;
+          if (typeof value === 'boolean') return value;
+          if (typeof value === 'string') {
+            const normalized = value.trim().toLowerCase();
+            if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
+            if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
+          }
+          return undefined;
+        };
+
+        const sslEnabled =
+          parseBool(configService.get('DB_SSL')) ??
+          (databaseUrl ? true : false);
+
+        const sslConfig = sslEnabled
+          ? {
+              rejectUnauthorized:
+                parseBool(configService.get('DB_SSL_REJECT_UNAUTHORIZED')) ?? false,
+            }
+          : undefined;
 
         if (databaseUrl) {
           return {
@@ -40,9 +61,7 @@ import { SeedService } from './seed/seed.service';
             url: databaseUrl,
             autoLoadEntities: true,
             synchronize: configService.get<boolean>('DB_SYNCHRONIZE'),
-            ssl: {
-              rejectUnauthorized: false,
-            },
+            ssl: sslConfig,
           };
         }
 
@@ -62,9 +81,7 @@ import { SeedService } from './seed/seed.service';
           database,
           autoLoadEntities: true,
           synchronize: configService.get<boolean>('DB_SYNCHRONIZE'),
-          ssl: {
-            rejectUnauthorized: false,
-          },
+          ssl: sslConfig,
         };
       },
       inject: [ConfigService],

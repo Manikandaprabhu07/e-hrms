@@ -16,6 +16,7 @@ const auth_controller_1 = require("./auth.controller");
 const users_module_1 = require("../users/users.module");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
 const access_module_1 = require("../access/access.module");
+const jwt_secret_1 = require("./jwt-secret");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -30,7 +31,7 @@ exports.AuthModule = AuthModule = __decorate([
                 useFactory: (configService) => {
                     const expiresIn = configService.get('JWT_EXPIRES_IN') || '1d';
                     return {
-                        secret: configService.get('JWT_SECRET'),
+                        secret: (0, jwt_secret_1.getJwtSecret)(configService),
                         signOptions: {
                             expiresIn: expiresIn,
                         },

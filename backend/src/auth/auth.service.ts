@@ -4,6 +4,7 @@ import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { RolesService } from '../access/roles.service';
+import { getJwtSecret } from './jwt-secret';
 
 @Injectable()
 export class AuthService {
@@ -27,9 +28,11 @@ export class AuthService {
         const roles = user.roles || [];
         const payload = { email: user.email, sub: user.id, roles: roles.map((r: any) => r.name) };
 
-        const jwtSecret = this.configService.get<string>('JWT_SECRET');
-        if (!jwtSecret) {
-            throw new InternalServerErrorException('JWT secret not configured. Set JWT_SECRET in your environment variables.');
+        let jwtSecret: string;
+        try {
+            jwtSecret = getJwtSecret(this.configService);
+        } catch (e: any) {
+            throw new InternalServerErrorException(e?.message ?? 'JWT secret not configured.');
         }
 
         return {

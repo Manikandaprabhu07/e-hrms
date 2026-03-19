@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AccessModule } from '../access/access.module';
+import { getJwtSecret } from './jwt-secret';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { AccessModule } from '../access/access.module';
         const expiresIn = configService.get<string>('JWT_EXPIRES_IN') || '1d';
 
         return {
-          secret: configService.get<string>('JWT_SECRET'),
+          secret: getJwtSecret(configService),
           signOptions: {
             // jwt expects a StringValue (from jsonwebtoken types). cast to satisfy TS.
             expiresIn: expiresIn as any,

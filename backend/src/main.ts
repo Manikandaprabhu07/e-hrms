@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { setDefaultResultOrder } from 'dns';
 import { AppModule } from './app.module';
 
@@ -12,8 +12,10 @@ async function bootstrap() {
   // Enable CORS
   app.enableCors();
 
-  // Set global API prefix
-  app.setGlobalPrefix('api');
+  // Set global API prefix (but keep GET / working so "backend link" doesn't show 404)
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: '', method: RequestMethod.GET }],
+  });
 
   // Use validation pipe
   app.useGlobalPipes(new ValidationPipe({
