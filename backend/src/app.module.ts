@@ -31,17 +31,44 @@ import { SeedService } from './seed/seed.service';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-      type: 'postgres',
-      url: configService.get<string>('DATABASE_URL'),
-      autoLoadEntities: true,
-      synchronize: true,
-      ssl: {
-        rejectUnauthorized: false,
+      useFactory: async (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL');
+
+        if (databaseUrl) {
+          return {
+            type: 'postgres',
+            url: databaseUrl,
+            autoLoadEntities: true,
+            synchronize: configService.get<boolean>('DB_SYNCHRONIZE'),
+            ssl: {
+              rejectUnauthorized: false,
+            },
+          };
+        }
+
+        // Fallback to individual env vars if DATABASE_URL is not provided
+        const host = configService.get<string>('DB_HOST');
+        const port = configService.get<number>('DB_PORT');
+        const username = configService.get<string>('DB_USERNAME');
+        const password = configService.get<string>('DB_PASSWORD');
+        const database = configService.get<string>('DB_DATABASE');
+
+        return {
+          type: 'postgres',
+          host,
+          port,
+          username,
+          password,
+          database,
+          autoLoadEntities: true,
+          synchronize: configService.get<boolean>('DB_SYNCHRONIZE'),
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        };
       },
+      inject: [ConfigService],
     }),
-    inject: [ConfigService],
-   }),
     EmployeesModule,
     UsersModule,
     AuthModule,
