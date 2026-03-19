@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { lookup } from 'dns/promises';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EmployeesModule } from './employees/employees.module';
@@ -32,34 +31,17 @@ import { SeedService } from './seed/seed.service';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
-        const host = configService.get<string>('DB_HOST');
-        let resolvedHost = host;
-
-        // Resolve the DB host to an IPv4 address to avoid environments where IPv6 is unreachable.
-        if (host) {
-          try {
-            const lookupResult = await lookup(host, { family: 4 });
-            resolvedHost = lookupResult.address;
-          } catch {
-            // fallback to the original host if resolution fails
-            resolvedHost = host;
-          }
-        }
-
-        return {
-          type: 'postgres',
-          host: resolvedHost,
-          port: configService.get<number>('DB_PORT'),
-          username: configService.get<string>('DB_USERNAME'),
-          password: configService.get<string>('DB_PASSWORD'),
-          database: configService.get<string>('DB_DATABASE'),
-          autoLoadEntities: true,
-          synchronize: configService.get<boolean>('DB_SYNCHRONIZE'),
-        };
+      useFactory: async (configService: ConfigService) => ({
+      type: 'postgres',
+      url: configService.get<string>('DATABASE_URL'),
+      autoLoadEntities: true,
+      synchronize: true,
+      ssl: {
+        rejectUnauthorized: false,
       },
-      inject: [ConfigService],
     }),
+    inject: [ConfigService],
+   }),
     EmployeesModule,
     UsersModule,
     AuthModule,
