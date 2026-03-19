@@ -4,6 +4,7 @@ import { RouterOutlet } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { NotificationService, AuthService } from './core/services';
 import { ToastComponent } from './shared/components';
+import { inject as injectAnalytics } from '@vercel/analytics';
 
 @Component({
   selector: 'app-root',
@@ -63,6 +64,9 @@ export class App implements OnInit {
   notifications = this.notificationService.notifications;
 
   ngOnInit(): void {
+    // Initialize Vercel Analytics
+    injectAnalytics();
+    
     // Initialize auth state
     const isAuthenticated = this.authService.isAuthenticated();
     console.log('Application initialized. User authenticated:', isAuthenticated);
