@@ -25,7 +25,9 @@ export class AuthService {
         const roles = user.roles || [];
         const payload = { email: user.email, sub: user.id, roles: roles.map((r: any) => r.name) };
         return {
-            accessToken: this.jwtService.sign(payload),
+            accessToken: this.jwtService.sign(payload, {
+                expiresIn: '1d',   // 🔥 HARDCODE FOR NOW
+            }),
             expiresIn: 3600,
             user: {
                 id: user.id,
