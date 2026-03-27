@@ -11,6 +11,14 @@ export declare class EmployeesService {
     findOne(id: string): Promise<Employee>;
     findByEmail(email: string): Promise<Employee | null>;
     findByUserId(userId: string): Promise<Employee | null>;
+    uploadPreview(file?: {
+        buffer?: Buffer;
+    }): Partial<Employee>[];
+    saveImportedEmployees(rows: any[]): Promise<{
+        message: string;
+        saved: number;
+        skipped: number;
+    }>;
     create(employeeData: Partial<Employee> & {
         user?: {
             username?: string;
@@ -20,4 +28,15 @@ export declare class EmployeesService {
     }): Promise<Employee>;
     update(id: string, employeeData: Partial<Employee>): Promise<Employee>;
     remove(id: string): Promise<void>;
+    private mapImportRow;
+    private normalizeImportedEmployee;
+    private stringValue;
+    private numberValue;
+    private normalizeDate;
+    private normalizeEmploymentType;
+    private normalizeEmployeeStatus;
+    private normalizeWorkLocation;
+    private normalizeShift;
+    private generateImportEmployeeId;
+    private todayDate;
 }

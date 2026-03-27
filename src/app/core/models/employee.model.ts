@@ -226,3 +226,20 @@ export interface EmployeeListItem {
   address?: string;
   dateOfJoining?: Date;
 }
+
+export interface EmployeeImportPreview {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  department: string;
+  designation: string;
+  salary: number;
+  dateOfBirth?: string | null;
+  employmentType?: EmploymentType;
+  employmentStatus?: EmployeeStatus;
+  workLocation?: WorkLocationType;
+  shift?: ShiftType;
+  dateOfJoining?: string;
+}

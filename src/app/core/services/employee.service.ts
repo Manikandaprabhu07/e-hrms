@@ -1,6 +1,12 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Employee, EmployeeListItem, PaginationParams, PaginatedResponse } from '../models';
+import {
+  Employee,
+  EmployeeImportPreview,
+  EmployeeListItem,
+  PaginationParams,
+  PaginatedResponse
+} from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -226,5 +232,48 @@ export class EmployeeService {
    */
   clearError(): void {
     this.errorSignal.set(null);
+  }
+
+  uploadEmployeesPreview(file: File): Promise<EmployeeImportPreview[]> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.isLoadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    return new Promise((resolve, reject) => {
+      this.http.post<EmployeeImportPreview[]>(`${this.apiUrl}/upload-preview`, formData).subscribe({
+        next: (rows) => {
+          this.isLoadingSignal.set(false);
+          resolve(rows);
+        },
+        error: (error) => {
+          const errorMessage = error.error?.message || 'Failed to preview employees';
+          this.errorSignal.set(errorMessage);
+          this.isLoadingSignal.set(false);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  saveImportedEmployees(rows: EmployeeImportPreview[]): Promise<{ message: string; saved: number; skipped: number }> {
+    this.isLoadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    return new Promise((resolve, reject) => {
+      this.http.post<{ message: string; saved: number; skipped: number }>(`${this.apiUrl}/save-import`, rows).subscribe({
+        next: (response) => {
+          this.isLoadingSignal.set(false);
+          resolve(response);
+        },
+        error: (error) => {
+          const errorMessage = error.error?.message || 'Failed to import employees';
+          this.errorSignal.set(errorMessage);
+          this.isLoadingSignal.set(false);
+          reject(error);
+        }
+      });
+    });
   }
 }

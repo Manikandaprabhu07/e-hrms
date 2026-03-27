@@ -13,6 +13,12 @@ export declare class EmployeesController {
             roleName?: string;
         };
     }): Promise<Employee>;
+    uploadPreview(file: any): Partial<Employee>[];
+    saveImportedEmployees(employees: any[]): Promise<{
+        message: string;
+        saved: number;
+        skipped: number;
+    }>;
     update(id: string, employeeData: Partial<Employee> & {
         user?: {
             username?: string;

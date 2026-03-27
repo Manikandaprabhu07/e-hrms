@@ -5,6 +5,13 @@ import { Employee } from './entities/employee.entity';
 import { UsersService } from '../users/users.service';
 import { RolesService } from '../access/roles.service';
 import * as bcrypt from 'bcrypt';
+import * as XLSX from 'xlsx';
+import {
+    EmployeeStatus,
+    EmploymentType,
+    ShiftType,
+    WorkLocationType,
+} from './entities/employee.entity';
 
 @Injectable()
 export class EmployeesService {
@@ -33,6 +40,74 @@ export class EmployeesService {
 
     findByUserId(userId: string): Promise<Employee | null> {
         return this.employeesRepository.findOne({ where: { userId } });
+    }
+
+    uploadPreview(file?: { buffer?: Buffer }) {
+        if (!file?.buffer?.length) {
+            throw new BadRequestException('Please upload an Excel file.');
+        }
+
+        const workbook = XLSX.read(file.buffer, { type: 'buffer', cellDates: true });
+        const firstSheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[firstSheetName];
+
+        if (!sheet) {
+            throw new BadRequestException('The uploaded workbook does not contain a readable sheet.');
+        }
+
+        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+            defval: '',
+            raw: false,
+        });
+
+        return rows
+            .map((row: Record<string, unknown>, index: number) => this.mapImportRow(row, index))
+            .filter((row: Partial<Employee> | null): row is Partial<Employee> => row !== null);
+    }
+
+    async saveImportedEmployees(rows: any[]) {
+        if (!Array.isArray(rows) || rows.length === 0) {
+            throw new BadRequestException('No employees were provided for import.');
+        }
+
+        let saved = 0;
+        let skipped = 0;
+
+        for (let index = 0; index < rows.length; index += 1) {
+            const normalized = this.normalizeImportedEmployee(rows[index], index);
+            if (!normalized) {
+                skipped += 1;
+                continue;
+            }
+
+            const existingByEmail = await this.employeesRepository.findOne({
+                where: { email: normalized.email },
+            });
+
+            if (existingByEmail) {
+                skipped += 1;
+                continue;
+            }
+
+            const existingByEmployeeId = await this.employeesRepository.findOne({
+                where: { employeeId: normalized.employeeId },
+            });
+
+            if (existingByEmployeeId) {
+                skipped += 1;
+                continue;
+            }
+
+            const employee = this.employeesRepository.create(normalized);
+            await this.employeesRepository.save(employee);
+            saved += 1;
+        }
+
+        return {
+            message: 'Employees imported successfully.',
+            saved,
+            skipped,
+        };
     }
 
     async create(employeeData: Partial<Employee> & { user?: { username?: string; password?: string; roleName?: string } }): Promise<Employee> {
@@ -176,5 +251,151 @@ export class EmployeesService {
 
     async remove(id: string): Promise<void> {
         await this.employeesRepository.delete(id);
+    }
+
+    private mapImportRow(row: Record<string, unknown>, index: number) {
+        const firstName = this.stringValue(row['First Name']);
+        const officialEmail = this.stringValue(row['Official Email']);
+
+        if (!firstName || !officialEmail) {
+            return null;
+        }
+
+        return this.normalizeImportedEmployee(
+            {
+                employeeId: this.stringValue(row['Employee ID']),
+                firstName,
+                lastName: this.stringValue(row['Last Name']),
+                gender: this.stringValue(row['Gender']),
+                dateOfBirth: row['DOB'],
+                personalEmail: this.stringValue(row['Personal Email']),
+                email: officialEmail,
+                phone: this.stringValue(row['Mobile']),
+                department: this.stringValue(row['Department']),
+                designation: this.stringValue(row['Designation']),
+                salary: row['Basic Salary'],
+                rowNumber: index + 2,
+            },
+            index,
+        );
+    }
+
+    private normalizeImportedEmployee(input: any, index: number): Partial<Employee> | null {
+        const firstName = this.stringValue(input?.firstName);
+        const email = this.stringValue(input?.email || input?.officialEmail);
+
+        if (!firstName || !email) {
+            return null;
+        }
+
+        return {
+            employeeId: this.stringValue(input?.employeeId) || this.generateImportEmployeeId(index),
+            firstName,
+            lastName: this.stringValue(input?.lastName),
+            email,
+            phone: this.stringValue(input?.phone || input?.mobile),
+            department: this.stringValue(input?.department) || 'General',
+            designation: this.stringValue(input?.designation) || 'Employee',
+            employmentType: this.normalizeEmploymentType(input?.employmentType),
+            employmentStatus: this.normalizeEmployeeStatus(input?.employmentStatus),
+            workLocation: this.normalizeWorkLocation(input?.workLocation),
+            shift: this.normalizeShift(input?.shift),
+            dateOfJoining: this.normalizeDate(input?.dateOfJoining) || this.todayDate(),
+            dateOfBirth: this.normalizeDate(input?.dateOfBirth || input?.dob) || undefined,
+            salary: this.numberValue(input?.salary || input?.basicSalary),
+            isActive: input?.isActive ?? true,
+        };
+    }
+
+    private stringValue(value: unknown): string {
+        return String(value ?? '').trim();
+    }
+
+    private numberValue(value: unknown): number {
+        if (value === null || value === undefined || value === '') {
+            return 0;
+        }
+
+        const parsed = Number(String(value).replace(/,/g, ''));
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    private normalizeDate(value: unknown): Date | null {
+        if (value === null || value === undefined || value === '') {
+            return null;
+        }
+
+        if (value instanceof Date && !Number.isNaN(value.getTime())) {
+            return value;
+        }
+
+        if (typeof value === 'number') {
+            const parsedDate = XLSX.SSF.parse_date_code(value);
+            if (parsedDate) {
+                return new Date(parsedDate.y, parsedDate.m - 1, parsedDate.d);
+            }
+        }
+
+        const parsed = new Date(String(value));
+        if (!Number.isNaN(parsed.getTime())) {
+            return parsed;
+        }
+
+        return null;
+    }
+
+    private normalizeEmploymentType(value: unknown): EmploymentType {
+        const normalized = this.stringValue(value).toLowerCase();
+        const map: Record<string, EmploymentType> = {
+            permanent: EmploymentType.PERMANENT,
+            contract: EmploymentType.CONTRACT,
+            temporary: EmploymentType.TEMPORARY,
+            part_time: EmploymentType.PART_TIME,
+            'part time': EmploymentType.PART_TIME,
+            intern: EmploymentType.INTERN,
+        };
+        return map[normalized] || EmploymentType.PERMANENT;
+    }
+
+    private normalizeEmployeeStatus(value: unknown): EmployeeStatus {
+        const normalized = this.stringValue(value).toLowerCase();
+        const map: Record<string, EmployeeStatus> = {
+            active: EmployeeStatus.ACTIVE,
+            on_leave: EmployeeStatus.ON_LEAVE,
+            'on leave': EmployeeStatus.ON_LEAVE,
+            resigned: EmployeeStatus.RESIGNED,
+            terminated: EmployeeStatus.TERMINATED,
+            probation: EmployeeStatus.PROBATION,
+        };
+        return map[normalized] || EmployeeStatus.ACTIVE;
+    }
+
+    private normalizeWorkLocation(value: unknown): WorkLocationType {
+        const normalized = this.stringValue(value).toLowerCase();
+        const map: Record<string, WorkLocationType> = {
+            office: WorkLocationType.OFFICE,
+            remote: WorkLocationType.REMOTE,
+            hybrid: WorkLocationType.HYBRID,
+        };
+        return map[normalized] || WorkLocationType.OFFICE;
+    }
+
+    private normalizeShift(value: unknown): ShiftType {
+        const normalized = this.stringValue(value).toLowerCase();
+        const map: Record<string, ShiftType> = {
+            morning: ShiftType.MORNING,
+            evening: ShiftType.EVENING,
+            night: ShiftType.NIGHT,
+            flexible: ShiftType.FLEXIBLE,
+        };
+        return map[normalized] || ShiftType.MORNING;
+    }
+
+    private generateImportEmployeeId(index: number): string {
+        return `IMP${Date.now()}${String(index + 1).padStart(3, '0')}`;
+    }
+
+    private todayDate(): Date {
+        return new Date();
     }
 }

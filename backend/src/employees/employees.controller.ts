@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Request, NotFoundException } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Patch,
+    Delete,
+    Body,
+    Param,
+    Request,
+    NotFoundException,
+    UploadedFile,
+    UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { EmployeesService } from './employees.service';
 import { Employee } from './entities/employee.entity';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -33,6 +46,19 @@ export class EmployeesController {
     @Roles('ADMIN')
     create(@Body() employeeData: Partial<Employee> & { user?: { username?: string; password?: string; roleName?: string } }): Promise<Employee> {
         return this.employeesService.create(employeeData);
+    }
+
+    @Post('upload-preview')
+    @Roles('ADMIN')
+    @UseInterceptors(FileInterceptor('file'))
+    uploadPreview(@UploadedFile() file: any) {
+        return this.employeesService.uploadPreview(file);
+    }
+
+    @Post('save-import')
+    @Roles('ADMIN')
+    saveImportedEmployees(@Body() employees: any[]) {
+        return this.employeesService.saveImportedEmployees(employees);
     }
 
     @Patch(':id')

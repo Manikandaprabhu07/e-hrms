@@ -53,6 +53,8 @@ const employee_entity_1 = require("./entities/employee.entity");
 const users_service_1 = require("../users/users.service");
 const roles_service_1 = require("../access/roles.service");
 const bcrypt = __importStar(require("bcrypt"));
+const XLSX = __importStar(require("xlsx"));
+const employee_entity_2 = require("./entities/employee.entity");
 let EmployeesService = class EmployeesService {
     constructor(employeesRepository, usersService, rolesService) {
         this.employeesRepository = employeesRepository;
@@ -74,6 +76,60 @@ let EmployeesService = class EmployeesService {
     }
     findByUserId(userId) {
         return this.employeesRepository.findOne({ where: { userId } });
+    }
+    uploadPreview(file) {
+        if (!file?.buffer?.length) {
+            throw new common_1.BadRequestException('Please upload an Excel file.');
+        }
+        const workbook = XLSX.read(file.buffer, { type: 'buffer', cellDates: true });
+        const firstSheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[firstSheetName];
+        if (!sheet) {
+            throw new common_1.BadRequestException('The uploaded workbook does not contain a readable sheet.');
+        }
+        const rows = XLSX.utils.sheet_to_json(sheet, {
+            defval: '',
+            raw: false,
+        });
+        return rows
+            .map((row, index) => this.mapImportRow(row, index))
+            .filter((row) => row !== null);
+    }
+    async saveImportedEmployees(rows) {
+        if (!Array.isArray(rows) || rows.length === 0) {
+            throw new common_1.BadRequestException('No employees were provided for import.');
+        }
+        let saved = 0;
+        let skipped = 0;
+        for (let index = 0; index < rows.length; index += 1) {
+            const normalized = this.normalizeImportedEmployee(rows[index], index);
+            if (!normalized) {
+                skipped += 1;
+                continue;
+            }
+            const existingByEmail = await this.employeesRepository.findOne({
+                where: { email: normalized.email },
+            });
+            if (existingByEmail) {
+                skipped += 1;
+                continue;
+            }
+            const existingByEmployeeId = await this.employeesRepository.findOne({
+                where: { employeeId: normalized.employeeId },
+            });
+            if (existingByEmployeeId) {
+                skipped += 1;
+                continue;
+            }
+            const employee = this.employeesRepository.create(normalized);
+            await this.employeesRepository.save(employee);
+            saved += 1;
+        }
+        return {
+            message: 'Employees imported successfully.',
+            saved,
+            skipped,
+        };
     }
     async create(employeeData) {
         const userInput = employeeData.user || {};
@@ -198,6 +254,129 @@ let EmployeesService = class EmployeesService {
     }
     async remove(id) {
         await this.employeesRepository.delete(id);
+    }
+    mapImportRow(row, index) {
+        const firstName = this.stringValue(row['First Name']);
+        const officialEmail = this.stringValue(row['Official Email']);
+        if (!firstName || !officialEmail) {
+            return null;
+        }
+        return this.normalizeImportedEmployee({
+            employeeId: this.stringValue(row['Employee ID']),
+            firstName,
+            lastName: this.stringValue(row['Last Name']),
+            gender: this.stringValue(row['Gender']),
+            dateOfBirth: row['DOB'],
+            personalEmail: this.stringValue(row['Personal Email']),
+            email: officialEmail,
+            phone: this.stringValue(row['Mobile']),
+            department: this.stringValue(row['Department']),
+            designation: this.stringValue(row['Designation']),
+            salary: row['Basic Salary'],
+            rowNumber: index + 2,
+        }, index);
+    }
+    normalizeImportedEmployee(input, index) {
+        const firstName = this.stringValue(input?.firstName);
+        const email = this.stringValue(input?.email || input?.officialEmail);
+        if (!firstName || !email) {
+            return null;
+        }
+        return {
+            employeeId: this.stringValue(input?.employeeId) || this.generateImportEmployeeId(index),
+            firstName,
+            lastName: this.stringValue(input?.lastName),
+            email,
+            phone: this.stringValue(input?.phone || input?.mobile),
+            department: this.stringValue(input?.department) || 'General',
+            designation: this.stringValue(input?.designation) || 'Employee',
+            employmentType: this.normalizeEmploymentType(input?.employmentType),
+            employmentStatus: this.normalizeEmployeeStatus(input?.employmentStatus),
+            workLocation: this.normalizeWorkLocation(input?.workLocation),
+            shift: this.normalizeShift(input?.shift),
+            dateOfJoining: this.normalizeDate(input?.dateOfJoining) || this.todayDate(),
+            dateOfBirth: this.normalizeDate(input?.dateOfBirth || input?.dob) || undefined,
+            salary: this.numberValue(input?.salary || input?.basicSalary),
+            isActive: input?.isActive ?? true,
+        };
+    }
+    stringValue(value) {
+        return String(value ?? '').trim();
+    }
+    numberValue(value) {
+        if (value === null || value === undefined || value === '') {
+            return 0;
+        }
+        const parsed = Number(String(value).replace(/,/g, ''));
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+    normalizeDate(value) {
+        if (value === null || value === undefined || value === '') {
+            return null;
+        }
+        if (value instanceof Date && !Number.isNaN(value.getTime())) {
+            return value;
+        }
+        if (typeof value === 'number') {
+            const parsedDate = XLSX.SSF.parse_date_code(value);
+            if (parsedDate) {
+                return new Date(parsedDate.y, parsedDate.m - 1, parsedDate.d);
+            }
+        }
+        const parsed = new Date(String(value));
+        if (!Number.isNaN(parsed.getTime())) {
+            return parsed;
+        }
+        return null;
+    }
+    normalizeEmploymentType(value) {
+        const normalized = this.stringValue(value).toLowerCase();
+        const map = {
+            permanent: employee_entity_2.EmploymentType.PERMANENT,
+            contract: employee_entity_2.EmploymentType.CONTRACT,
+            temporary: employee_entity_2.EmploymentType.TEMPORARY,
+            part_time: employee_entity_2.EmploymentType.PART_TIME,
+            'part time': employee_entity_2.EmploymentType.PART_TIME,
+            intern: employee_entity_2.EmploymentType.INTERN,
+        };
+        return map[normalized] || employee_entity_2.EmploymentType.PERMANENT;
+    }
+    normalizeEmployeeStatus(value) {
+        const normalized = this.stringValue(value).toLowerCase();
+        const map = {
+            active: employee_entity_2.EmployeeStatus.ACTIVE,
+            on_leave: employee_entity_2.EmployeeStatus.ON_LEAVE,
+            'on leave': employee_entity_2.EmployeeStatus.ON_LEAVE,
+            resigned: employee_entity_2.EmployeeStatus.RESIGNED,
+            terminated: employee_entity_2.EmployeeStatus.TERMINATED,
+            probation: employee_entity_2.EmployeeStatus.PROBATION,
+        };
+        return map[normalized] || employee_entity_2.EmployeeStatus.ACTIVE;
+    }
+    normalizeWorkLocation(value) {
+        const normalized = this.stringValue(value).toLowerCase();
+        const map = {
+            office: employee_entity_2.WorkLocationType.OFFICE,
+            remote: employee_entity_2.WorkLocationType.REMOTE,
+            hybrid: employee_entity_2.WorkLocationType.HYBRID,
+        };
+        return map[normalized] || employee_entity_2.WorkLocationType.OFFICE;
+    }
+    normalizeShift(value) {
+        const normalized = this.stringValue(value).toLowerCase();
+        const map = {
+            morning: employee_entity_2.ShiftType.MORNING,
+            evening: employee_entity_2.ShiftType.EVENING,
+            night: employee_entity_2.ShiftType.NIGHT,
+            flexible: employee_entity_2.ShiftType.FLEXIBLE,
+        };
+        return map[normalized] || employee_entity_2.ShiftType.MORNING;
+    }
+    generateImportEmployeeId(index) {
+        return `IMP${Date.now()}${String(index + 1).padStart(3, '0')}`;
+    }
+    todayDate() {
+        return new Date();
     }
 };
 exports.EmployeesService = EmployeesService;

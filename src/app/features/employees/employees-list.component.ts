@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { EmployeeService, AuthService } from '../../core/services';
 import { LoadingSpinnerComponent, CardComponent } from '../../shared/components';
-import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/models';
+import { EmployeeImportPreview, EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/models';
 
 @Component({
   selector: 'app-employees-list',
@@ -13,15 +13,27 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
   template: `
     <div class="employees-container">
       <div class="page-header">
-        <div class="header-content">
+          <div class="header-content">
           <div>
             <h1>Employee Directory</h1>
             <p class="subtitle">{{ filteredEmployeeCount() }} of {{ employeeCount() }} employees</p>
           </div>
           @if (isAdmin()) {
-            <button class="btn btn-primary add-btn" (click)="addEmployee()">
-              <span>+</span> Add Employee
-            </button>
+            <div class="header-actions">
+              <input
+                #excelInput
+                type="file"
+                accept=".xlsx,.xls"
+                class="hidden-file-input"
+                (change)="onExcelFileSelected($event)"
+              />
+              <button class="btn btn-secondary upload-btn" (click)="excelInput.click()" [disabled]="isUploadingPreview() || isSavingImport()">
+                {{ isUploadingPreview() ? 'Uploading...' : 'Upload Excel' }}
+              </button>
+              <button class="btn btn-primary add-btn" (click)="addEmployee()">
+                <span>+</span> Add Employee
+              </button>
+            </div>
           }
         </div>
       </div>
@@ -72,6 +84,50 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
           </div>
         </div>
       </app-card>
+
+      @if (previewData().length > 0) {
+        <app-card [elevated]="true" class="preview-card">
+          <div class="preview-header">
+            <div>
+              <h2>Employee Import Preview</h2>
+              <p class="preview-subtitle">{{ previewData().length }} employee records ready to import</p>
+            </div>
+            <div class="preview-actions">
+              <button class="btn btn-secondary" (click)="clearPreview()" [disabled]="isSavingImport()">Clear</button>
+              <button class="btn btn-primary save-btn" (click)="saveImportedEmployees()" [disabled]="isSavingImport()">
+                {{ isSavingImport() ? 'Saving...' : 'Save Employees' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="preview-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Department</th>
+                  <th>Designation</th>
+                  <th>Salary</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (employee of previewData(); track employee.employeeId + employee.email) {
+                  <tr>
+                    <td><span class="employee-id">{{ employee.employeeId }}</span></td>
+                    <td>{{ employee.firstName }} {{ employee.lastName }}</td>
+                    <td>{{ employee.email }}</td>
+                    <td><span class="dept-badge">{{ employee.department }}</span></td>
+                    <td>{{ employee.designation }}</td>
+                    <td><span class="salary">₹{{ employee.salary | number:'1.0-2' }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </app-card>
+      }
 
       <app-card [elevated]="true">
         <app-loading-spinner [isLoading]="isLoading()" message="Loading employees..." />
@@ -211,9 +267,80 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
       border-radius: 6px;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hidden-file-input {
+      display: none;
+    }
+
+    .upload-btn {
+      padding: 10px 18px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      color: #1d4ed8;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      font-weight: 700;
+    }
+
+    .upload-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    }
+
     /* Filters */
     .filters-card {
       margin-bottom: 20px;
+    }
+
+    .preview-card {
+      margin-bottom: 20px;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .preview-header h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #1e293b;
+    }
+
+    .preview-subtitle {
+      margin: 6px 0 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .save-btn {
+      box-shadow: 0 10px 24px rgba(30, 64, 175, 0.12);
+    }
+
+    .preview-table {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      animation: floatIn 0.45s ease;
+    }
+
+    .preview-table table {
+      min-width: 900px;
     }
 
     .filters-container {
@@ -531,10 +658,29 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
         align-items: flex-start;
         gap: 16px;
       }
+
+      .header-actions {
+        width: 100%;
+      }
+
+      .upload-btn,
+      .add-btn {
+        width: 100%;
+        justify-content: center;
+      }
       
       .filter-controls {
         flex-direction: column;
         width: 100%;
+      }
+
+      .preview-header,
+      .preview-actions {
+        width: 100%;
+      }
+
+      .preview-actions .btn {
+        flex: 1;
       }
 
       .filter-select {
@@ -583,6 +729,9 @@ export class EmployeesListComponent implements OnInit {
   // Check if current user is admin
   isAdmin = computed(() => this.authService.hasRole('ADMIN'));
   isExporting = signal(false);
+  isUploadingPreview = signal(false);
+  isSavingImport = signal(false);
+  previewData = signal<EmployeeImportPreview[]>([]);
 
   // Search and filter state
   searchQuery = signal('');
@@ -827,5 +976,55 @@ export class EmployeesListComponent implements OnInit {
 
   addEmployee(): void {
     this.router.navigate(['/employees/new']);
+  }
+
+  async onExcelFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    this.isUploadingPreview.set(true);
+
+    try {
+      const preview = await this.employeeService.uploadEmployeesPreview(file);
+      this.previewData.set(preview);
+
+      if (preview.length === 0) {
+        alert('No valid employee rows were found in the uploaded file.');
+      }
+    } catch (error) {
+      console.error('Error generating employee preview:', error);
+      alert('Failed to generate employee preview.');
+    } finally {
+      this.isUploadingPreview.set(false);
+      input.value = '';
+    }
+  }
+
+  clearPreview(): void {
+    this.previewData.set([]);
+  }
+
+  async saveImportedEmployees(): Promise<void> {
+    if (this.previewData().length === 0) {
+      return;
+    }
+
+    this.isSavingImport.set(true);
+
+    try {
+      const response = await this.employeeService.saveImportedEmployees(this.previewData());
+      await this.employeeService.getEmployees({ pageSize: 100, pageNumber: 1 });
+      this.previewData.set([]);
+      alert(`${response.message} Saved: ${response.saved}, Skipped: ${response.skipped}.`);
+    } catch (error) {
+      console.error('Error saving imported employees:', error);
+      alert('Failed to save imported employees.');
+    } finally {
+      this.isSavingImport.set(false);
+    }
   }
 }
