@@ -29,6 +29,8 @@ export declare class Employee {
     firstName: string;
     lastName: string;
     email: string;
+    avatar: string;
+    profilePhoto: string;
     phone: string;
     department: string;
     designation: string;
@@ -41,6 +43,13 @@ export declare class Employee {
     dateOfBirth: Date;
     salary: number;
     isActive: boolean;
+    documents: Array<{
+        id: string;
+        name: string;
+        category: string;
+        contentType: string;
+        dataUrl: string;
+    }>;
     userId: string;
     createdAt: Date;
     updatedAt: Date;

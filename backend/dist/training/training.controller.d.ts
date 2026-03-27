@@ -8,7 +8,7 @@ export declare class TrainingController {
     findOne(id: string): Promise<Training>;
     assignments(id: string): Promise<import("./entities/training-assignment.entity").TrainingAssignment[]>;
     create(trainingData: any): Promise<Training>;
-    backfill(id: string): Promise<{
+    backfill(id: string, body: any): Promise<{
         inserted: number;
         targeted: number;
     }>;

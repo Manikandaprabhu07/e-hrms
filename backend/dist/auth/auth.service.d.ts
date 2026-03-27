@@ -45,4 +45,18 @@ export declare class AuthService {
         createdAt: Date;
         updatedAt: Date;
     }>;
+    changePassword(userId: string, payload: {
+        currentPassword: string;
+        newPassword: string;
+        confirmPassword: string;
+    }): Promise<{
+        message: string;
+    }>;
+    changeEmail(userId: string, payload: {
+        newEmail: string;
+        password: string;
+    }): Promise<{
+        message: string;
+        user: any;
+    }>;
 }

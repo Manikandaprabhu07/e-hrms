@@ -1,7 +1,8 @@
-import { Component, inject, HostListener, ElementRef, signal } from '@angular/core';
+import { Component, computed, inject, HostListener, ElementRef, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { EmployeeService } from '../../core/services/employee.service';
 
 @Component({
   selector: 'app-user-menu',
@@ -10,11 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <div class="user-menu-container">
       <button class="user-menu-btn" (click)="toggleMenu()" type="button" aria-label="User menu">
-        <!-- Carbon User Profile Icon -->
-        <svg class="icon" viewBox="0 0 32 32" width="20" height="20" fill="currentColor">
-          <path d="M16 2C8.3 2 2 8.3 2 16s6.3 14 14 14 14-6.3 14-14S23.7 2 16 2zm0 6c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4zm0 18c-3.4 0-6.5-1.8-8.2-4.5C9.1 19.2 12.3 18 16 18s6.9 1.2 8.2 3.5C22.5 24.2 19.4 26 16 26z"/>
-        </svg>
-        
+        <img class="avatar" [src]="userAvatar()" [alt]="user()?.firstName || 'User'" />
         <span class="user-name">{{ user()?.firstName || 'User' }}</span>
         
         <!-- Carbon Chevron Down Icon -->
@@ -49,16 +46,6 @@ import { AuthService } from '../../core/services/auth.service';
     </div>
   `,
   styles: [`
-    :host {
-      --cds-ui-01: #f4f4f4;
-      --cds-ui-02: #ffffff;
-      --cds-ui-03: #e0e0e0;
-      --cds-text-01: #161616;
-      --cds-text-02: #525252;
-      --cds-interactive-01: #0f62fe;
-      --cds-danger: #da1e28;
-    }
-
     .user-menu-container {
       position: relative;
       display: flex;
@@ -70,26 +57,37 @@ import { AuthService } from '../../core/services/auth.service';
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 1rem;
-      background: transparent;
-      border: 1px solid var(--cds-ui-03);
-      border-radius: 2px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
       cursor: pointer;
       font-size: 1rem;
       transition: all 0.2s;
-      color: var(--cds-text-01);
+      color: var(--text-primary);
       z-index: 1001;
       position: relative;
       font-family: 'IBM Plex Sans', Arial, sans-serif;
+      box-shadow: 0 10px 24px var(--shadow-soft);
     }
 
     .user-menu-btn:hover {
-      background: var(--cds-ui-01);
-      border-color: var(--cds-interactive-01);
+      background: var(--surface-hover);
+      border-color: var(--border-accent-soft);
     }
 
     .icon {
       flex-shrink: 0;
-      color: var(--cds-text-02);
+      color: var(--text-muted);
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+      flex-shrink: 0;
     }
 
     .user-name {
@@ -118,10 +116,10 @@ import { AuthService } from '../../core/services/auth.service';
       position: absolute;
       top: calc(100% + 0.5rem);
       right: 0;
-      background: var(--cds-ui-02);
-      border: 1px solid var(--cds-ui-03);
-      border-radius: 2px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      background: var(--surface-glass-strong);
+      border: 1px solid var(--border-soft);
+      border-radius: 18px;
+      box-shadow: 0 18px 40px var(--shadow-strong);
       min-width: 240px;
       opacity: 0;
       visibility: hidden;
@@ -140,13 +138,13 @@ import { AuthService } from '../../core/services/auth.service';
 
     .menu-header {
       padding: 1rem;
-      border-bottom: 1px solid var(--cds-ui-03);
+      border-bottom: 1px solid var(--border-soft);
     }
 
     .email {
       margin: 0;
       font-size: 0.75rem;
-      color: var(--cds-text-02);
+      color: var(--text-muted);
       word-break: break-all;
       font-family: 'IBM Plex Sans', Arial, sans-serif;
     }
@@ -166,7 +164,7 @@ import { AuthService } from '../../core/services/auth.service';
       border: none;
       cursor: pointer;
       text-decoration: none;
-      color: var(--cds-text-01);
+      color: var(--text-primary);
       transition: background-color 0.2s;
       text-align: left;
       width: 100%;
@@ -175,12 +173,12 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .menu-item:hover {
-      background-color: var(--cds-ui-01);
+      background-color: var(--surface-subtle);
     }
 
     .logout-btn {
-      color: var(--cds-danger);
-      border-top: 1px solid var(--cds-ui-03);
+      color: #dc2626;
+      border-top: 1px solid var(--border-soft);
     }
 
     .logout-btn:hover {
@@ -188,17 +186,39 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .logout-btn .icon {
-      color: var(--cds-danger);
+      color: #dc2626;
     }
   `]
 })
-export class UserMenuComponent {
+export class UserMenuComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private elementRef = inject(ElementRef);
+  private employeeService = inject(EmployeeService);
 
   user = this.authService.user;
   isOpen = signal(false);
+  employeePhoto = signal<string | null>(null);
+  userAvatar = computed(() => {
+    const currentUser = this.user();
+    const photo = this.employeePhoto();
+    if (photo) {
+      return photo;
+    }
+    const name = `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || currentUser?.email || 'User';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1e40af&color=fff`;
+  });
+
+  async ngOnInit(): Promise<void> {
+    if (this.authService.hasRole('EMPLOYEE')) {
+      try {
+        const employee = await this.employeeService.getMe();
+        this.employeePhoto.set((employee as any)?.profilePhoto || (employee as any)?.avatar || null);
+      } catch {
+        this.employeePhoto.set(null);
+      }
+    }
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {

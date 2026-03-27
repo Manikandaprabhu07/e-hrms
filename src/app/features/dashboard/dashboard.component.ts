@@ -1,6 +1,6 @@
  import { Component, ChangeDetectionStrategy, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService, DashboardService, EventService, FeedbackService, EmployeeService, LeaveService, TrainingService } from '../../core/services';
+import { AuthService, DashboardService, EventService, FeedbackService, EmployeeService, LeaveService, TrainingService, AttendanceService } from '../../core/services';
 import { CardComponent } from '../../shared/components';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -176,21 +176,34 @@ interface Notice {
 
             <section class="department-section">
               <app-card [title]="'Employees by Department'" [elevated]="true">
-                <div class="department-list">
-                  @for (dept of departmentData(); track dept.name) {
-                    <div class="department-item">
-                      <div class="dept-info">
-                        <span class="dept-icon">{{ dept.icon }}</span>
-                        <div>
-                          <h4>{{ dept.name }}</h4>
-                          <p>{{ dept.count }} employees</p>
-                        </div>
-                      </div>
-                      <div class="dept-bar">
-                        <div class="dept-bar-fill" [style.width.%]="dept.percentage" [style.background]="dept.color"></div>
-                      </div>
+                <div class="department-visual">
+                  <button class="department-pie" [style.background]="departmentPieGradient()" (click)="clearDepartmentSelection()">
+                    <div class="department-pie-center">
+                      <span class="pie-value">
+                        {{ selectedDepartment()?.percentage ?? 100 }}%
+                      </span>
+                      <span class="pie-label">
+                        {{ selectedDepartment()?.name || 'All Teams' }}
+                      </span>
                     </div>
-                  }
+                  </button>
+
+                  <div class="department-list">
+                    @for (dept of departmentData(); track dept.name) {
+                      <button class="department-item" [class.active]="selectedDepartmentName() === dept.name" (click)="selectDepartment(dept.name)">
+                        <div class="dept-info">
+                          <span class="dept-icon" [style.background]="dept.color"></span>
+                          <div>
+                            <h4>{{ dept.name }}</h4>
+                            <p>{{ dept.count }} employees</p>
+                          </div>
+                        </div>
+                        <div class="dept-bar">
+                          <div class="dept-bar-fill" [style.width.%]="dept.percentage" [style.background]="dept.color"></div>
+                        </div>
+                      </button>
+                    }
+                  </div>
                 </div>
               </app-card>
             </section>
@@ -233,38 +246,48 @@ interface Notice {
             <section class="profile-section">
               <app-card [title]="'My Profile'" [elevated]="true">
                 @if (myEmployee()) {
-                  <div class="profile-grid">
-                    <div class="profile-item">
-                      <div class="label">Employee ID</div>
-                      <div class="value">{{ myEmployee().employeeId }}</div>
+                  <div class="profile-card">
+                    <div class="profile-photo-wrap">
+                      <img
+                        class="profile-photo"
+                        [src]="myEmployee().profilePhoto || myEmployee().avatar || getDashboardAvatar(myEmployee())"
+                        [alt]="myEmployee().firstName"
+                      />
                     </div>
-                    <div class="profile-item">
-                      <div class="label">Name</div>
-                      <div class="value">{{ myEmployee().firstName }} {{ myEmployee().lastName }}</div>
-                    </div>
-                    <div class="profile-item">
-                      <div class="label">Email</div>
-                      <div class="value">{{ myEmployee().email }}</div>
-                    </div>
-                    <div class="profile-item">
-                      <div class="label">Phone</div>
-                      <div class="value">{{ myEmployee().phone || '-' }}</div>
-                    </div>
-                    <div class="profile-item">
-                      <div class="label">Department</div>
-                      <div class="value">{{ myEmployee().department }}</div>
-                    </div>
-                    <div class="profile-item">
-                      <div class="label">Designation</div>
-                      <div class="value">{{ myEmployee().designation }}</div>
-                    </div>
-                    <div class="profile-item">
-                      <div class="label">Date Of Joining</div>
-                      <div class="value">{{ myEmployee().dateOfJoining ? (myEmployee().dateOfJoining | date:'mediumDate') : '-' }}</div>
-                    </div>
-                    <div class="profile-item">
-                      <div class="label">Employment Status</div>
-                      <div class="value">{{ myEmployee().employmentStatus || '-' }}</div>
+
+                    <div class="profile-grid">
+                      <div class="profile-item">
+                        <div class="label">Employee ID</div>
+                        <div class="value">{{ myEmployee().employeeId }}</div>
+                      </div>
+                      <div class="profile-item">
+                        <div class="label">Name</div>
+                        <div class="value">{{ myEmployee().firstName }} {{ myEmployee().lastName }}</div>
+                      </div>
+                      <div class="profile-item">
+                        <div class="label">Email</div>
+                        <div class="value">{{ myEmployee().email }}</div>
+                      </div>
+                      <div class="profile-item">
+                        <div class="label">Phone</div>
+                        <div class="value">{{ myEmployee().phone || '-' }}</div>
+                      </div>
+                      <div class="profile-item">
+                        <div class="label">Department</div>
+                        <div class="value">{{ myEmployee().department }}</div>
+                      </div>
+                      <div class="profile-item">
+                        <div class="label">Designation</div>
+                        <div class="value">{{ myEmployee().designation }}</div>
+                      </div>
+                      <div class="profile-item">
+                        <div class="label">Date Of Joining</div>
+                        <div class="value">{{ myEmployee().dateOfJoining ? (myEmployee().dateOfJoining | date:'mediumDate') : '-' }}</div>
+                      </div>
+                      <div class="profile-item">
+                        <div class="label">Employment Status</div>
+                        <div class="value">{{ myEmployee().employmentStatus || '-' }}</div>
+                      </div>
                     </div>
                   </div>
                 } @else {
@@ -293,6 +316,34 @@ interface Notice {
                       </div>
                     }
                   }
+                </div>
+              </app-card>
+            </section>
+
+            <section class="attendance-summary-section">
+              <app-card [title]="'My Attendance This Month'" [elevated]="true">
+                <div class="employee-attendance-card">
+                  <div class="employee-attendance-pie" [style.background]="employeeAttendancePieGradient()">
+                    <div class="employee-attendance-center">
+                      <span class="employee-attendance-value">{{ employeeAttendanceSummary().percentage }}%</span>
+                      <span class="employee-attendance-label">{{ employeeAttendanceSummary().label }}</span>
+                    </div>
+                  </div>
+
+                  <div class="employee-attendance-legend">
+                    <div class="legend-row">
+                      <span class="legend-swatch present"></span>
+                      <span>Present-related: {{ employeeAttendanceSummary().present }}</span>
+                    </div>
+                    <div class="legend-row">
+                      <span class="legend-swatch other"></span>
+                      <span>Other tracked: {{ employeeAttendanceSummary().other }}</span>
+                    </div>
+                    <div class="legend-row">
+                      <span class="legend-swatch absent"></span>
+                      <span>Absent: {{ employeeAttendanceSummary().absent }}</span>
+                    </div>
+                  </div>
                 </div>
               </app-card>
             </section>
@@ -748,16 +799,82 @@ interface Notice {
     }
 
     /* Departments */
+    .department-visual {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .department-pie {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 44px rgba(37, 99, 235, 0.14);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .department-pie:hover {
+      transform: scale(1.02);
+      box-shadow: 0 26px 56px rgba(37, 99, 235, 0.2);
+    }
+
+    .department-pie-center {
+      width: 126px;
+      height: 126px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.96);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.9);
+    }
+
+    .pie-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .pie-label {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      max-width: 86px;
+    }
+
     .department-list {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
 
     .department-item {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(248, 250, 252, 0.72);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .department-item.active {
+      border-color: rgba(37, 99, 235, 0.35);
+      background: rgba(219, 234, 254, 0.48);
+      box-shadow: 0 16px 30px rgba(37, 99, 235, 0.12);
+      transform: translateY(-2px);
     }
 
     .dept-info {
@@ -767,7 +884,11 @@ interface Notice {
     }
 
     .dept-icon {
-      font-size: 24px;
+      display: inline-flex;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.9);
     }
 
     .dept-info h4 {
@@ -792,6 +913,13 @@ interface Notice {
     .dept-bar-fill {
       height: 100%;
       transition: width 0.3s;
+    }
+
+    @media (max-width: 920px) {
+      .department-visual {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
     }
 
     /* View All Links */
@@ -861,6 +989,28 @@ interface Notice {
       font-size: 13px;
     }
 
+    .profile-card {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .profile-photo-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    .profile-photo {
+      width: 108px;
+      height: 108px;
+      border-radius: 24px;
+      object-fit: cover;
+      border: 3px solid rgba(255, 255, 255, 0.92);
+      box-shadow: 0 18px 36px rgba(37, 99, 235, 0.14);
+      background: #e2e8f0;
+    }
+
     .profile-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -888,6 +1038,78 @@ interface Notice {
       flex-direction: column;
       gap: 12px;
     }
+
+    .employee-attendance-card {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .employee-attendance-pie {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.14);
+    }
+
+    .employee-attendance-center {
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.96);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.9);
+    }
+
+    .employee-attendance-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .employee-attendance-label {
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-align: center;
+    }
+
+    .employee-attendance-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(248, 250, 252, 0.85);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .legend-swatch.present { background: #10b981; }
+    .legend-swatch.other { background: #f59e0b; }
+    .legend-swatch.absent { background: #ef4444; }
 
     .training-item {
       padding: 12px;
@@ -997,6 +1219,15 @@ interface Notice {
       .dashboard-grid-bottom {
         grid-template-columns: 1fr;
       }
+
+      .profile-card {
+        grid-template-columns: 1fr;
+      }
+
+      .employee-attendance-card {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -1009,6 +1240,7 @@ export class DashboardComponent {
   private eventService = inject(EventService);
   private leaveService = inject(LeaveService);
   private trainingService = inject(TrainingService);
+  private attendanceService = inject(AttendanceService);
   private router = inject(Router);
 
   user = this.authService.user;
@@ -1038,6 +1270,14 @@ export class DashboardComponent {
 
   employeeDashboard = signal<any>({
     leaveSummary: { pending: 0, approved: 0, rejected: 0 }
+  });
+  employeeAttendanceSummary = signal({
+    present: 0,
+    absent: 0,
+    other: 0,
+    trackedDays: 0,
+    percentage: 0,
+    label: 'This month'
   });
 
   myEmployee = signal<any | null>(null);
@@ -1088,17 +1328,24 @@ export class DashboardComponent {
   recentActivities = signal<Activity[]>([]);
 
   upcomingEvents = signal<any[]>([]);
+  selectedDepartmentName = signal<string | null>(null);
 
   departmentData = computed(() => {
     const counts = this.adminDashboard().departmentCounts || [];
     const total = counts.reduce((sum: number, item: any) => sum + Number(item.count || 0), 0) || 1;
-    return counts.map((item: any) => ({
+    const palette = ['#2563eb', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+    return counts.map((item: any, index: number) => ({
       name: item.department,
       count: Number(item.count || 0),
       percentage: Math.round((Number(item.count || 0) / total) * 100),
       icon: 'DEPT',
-      color: '#007bff'
+      color: palette[index % palette.length]
     }));
+  });
+
+  selectedDepartment = computed(() => {
+    const selectedName = this.selectedDepartmentName();
+    return this.departmentData().find((dept: any) => dept.name === selectedName) || null;
   });
 
   adminQuickActions = (): QuickAction[] => [
@@ -1207,6 +1454,20 @@ export class DashboardComponent {
     } catch {
       this.myTrainings.set([]);
     }
+
+    try {
+      const records = await this.attendanceService.getMine();
+      this.employeeAttendanceSummary.set(this.buildCurrentMonthAttendance(records || []));
+    } catch {
+      this.employeeAttendanceSummary.set({
+        present: 0,
+        absent: 0,
+        other: 0,
+        trackedDays: 0,
+        percentage: 0,
+        label: 'This month'
+      });
+    }
   }
 
   async approveLeave(id: string): Promise<void> {
@@ -1235,11 +1496,98 @@ export class DashboardComponent {
     this.router.navigate(['/training']);
   }
 
+  selectDepartment(name: string): void {
+    this.selectedDepartmentName.update((current) => (current === name ? null : name));
+  }
+
+  clearDepartmentSelection(): void {
+    this.selectedDepartmentName.set(null);
+  }
+
+  departmentPieGradient(): string {
+    const selected = this.selectedDepartment();
+    if (selected) {
+      return `conic-gradient(${selected.color} 0 ${selected.percentage}%, #e2e8f0 ${selected.percentage}% 100%)`;
+    }
+
+    const departments = this.departmentData();
+    if (departments.length === 0) {
+      return 'conic-gradient(#cbd5e1 0 100%)';
+    }
+
+    const total = departments.reduce((sum: number, dept: any) => sum + Number(dept.count || 0), 0) || 1;
+    let current = 0;
+    const segments = departments.map((dept: any, index: number) => {
+      const start = current;
+      const exactPercentage =
+        index === departments.length - 1
+          ? 100 - current
+          : (Number(dept.count || 0) / total) * 100;
+      current += exactPercentage;
+      const end = index === departments.length - 1 ? 100 : current;
+      return `${dept.color} ${start}% ${end}%`;
+    });
+
+    return `conic-gradient(${segments.join(', ')})`;
+  }
+
   private calculateDays(start: string, end: string): number {
     const startDate = new Date(start);
     const endDate = new Date(end);
     const diff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     return diff >= 0 ? diff + 1 : 0;
+  }
+
+  employeeAttendancePieGradient(): string {
+    const summary = this.employeeAttendanceSummary();
+    const total = summary.trackedDays || 1;
+    const presentPct = Math.round((summary.present / total) * 100);
+    const otherPct = Math.round((summary.other / total) * 100);
+    const absentPct = Math.max(0, 100 - presentPct - otherPct);
+    return `conic-gradient(#10b981 0 ${presentPct}%, #f59e0b ${presentPct}% ${presentPct + otherPct}%, #ef4444 ${presentPct + otherPct}% ${presentPct + otherPct + absentPct}%, #e2e8f0 ${presentPct + otherPct + absentPct}% 100%)`;
+  }
+
+  private buildCurrentMonthAttendance(records: any[]) {
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+    const summary = {
+      present: 0,
+      absent: 0,
+      other: 0,
+      trackedDays: 0,
+      percentage: 0,
+      label: now.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+    };
+
+    for (const record of records) {
+      const date = new Date(record.date);
+      if (Number.isNaN(date.getTime()) || date.getMonth() !== month || date.getFullYear() !== year) {
+        continue;
+      }
+
+      const status = String(record.status || '').toLowerCase();
+      if (status === 'holiday' || status === 'weekend') {
+        continue;
+      }
+
+      summary.trackedDays += 1;
+      if (['present', 'late', 'half_day', 'work_from_home'].includes(status)) {
+        summary.present += 1;
+      } else if (status === 'absent') {
+        summary.absent += 1;
+      } else {
+        summary.other += 1;
+      }
+    }
+
+    summary.percentage = summary.trackedDays ? Math.round((summary.present / summary.trackedDays) * 100) : 0;
+    return summary;
+  }
+
+  getDashboardAvatar(employee: any): string {
+    const name = `${employee?.firstName || ''} ${employee?.lastName || ''}`.trim() || 'Employee';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1e40af&color=fff`;
   }
 }
 

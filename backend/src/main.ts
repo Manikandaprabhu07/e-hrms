@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { setDefaultResultOrder } from 'dns';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 
 // Prefer IPv4 addresses to avoid environments where IPv6 is unreachable.
@@ -8,6 +9,9 @@ setDefaultResultOrder('ipv4first');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(json({ limit: '15mb' }));
+  app.use(urlencoded({ extended: true, limit: '15mb' }));
 
   // Enable CORS
   app.enableCors();

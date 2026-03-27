@@ -128,10 +128,12 @@ interface PayrollRecord {
                     </td>
                     <td>{{ record.paymentDate || '-' }}</td>
                     <td>
-                      <button class="btn btn-sm btn-primary" (click)="viewSlip(record)">View Slip</button>
-                      @if (isAdmin()) {
-                        <button class="btn btn-sm btn-secondary" style="margin-left:8px" (click)="edit(record)">Edit</button>
-                      }
+                      <div class="row-actions">
+                        <button class="btn btn-sm btn-primary" (click)="viewSlip(record)">View Slip</button>
+                        @if (isAdmin()) {
+                          <button class="btn btn-sm btn-secondary btn-edit" (click)="edit(record)">Edit</button>
+                        }
+                      </div>
                     </td>
                   </tr>
                 }
@@ -249,6 +251,14 @@ interface PayrollRecord {
       align-items: center;
     }
 
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+    }
+
     .table-responsive {
       width: 100%;
       height: calc(100vh - 180px); /* Fixed height */
@@ -287,7 +297,7 @@ interface PayrollRecord {
     th:nth-child(6), td:nth-child(6) { width: 140px; } /* Net */
     th:nth-child(7), td:nth-child(7) { width: 120px; } /* Status */
     th:nth-child(8), td:nth-child(8) { width: 140px; } /* date */
-    th:nth-child(9), td:nth-child(9) { width: 120px; } /* Actions */
+    th:nth-child(9), td:nth-child(9) { width: 160px; } /* Actions */
 
     th {
       position: sticky;
@@ -361,6 +371,7 @@ interface PayrollRecord {
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
+      white-space: nowrap;
     }
 
     .btn-primary {
@@ -375,10 +386,16 @@ interface PayrollRecord {
     .btn-secondary {
       background: #e2e8f0;
       color: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.28);
     }
 
     .btn-secondary:hover {
       background: #cbd5e1;
+    }
+
+    .btn-edit {
+      min-width: 72px;
+      font-weight: 700;
     }
 
     .text-center {

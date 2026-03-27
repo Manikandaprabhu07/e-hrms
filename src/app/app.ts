@@ -2,7 +2,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
-import { NotificationService, AuthService } from './core/services';
+import { NotificationService, AuthService, ThemeService } from './core/services';
 import { ToastComponent } from './shared/components';
 
 @Component({
@@ -59,10 +59,13 @@ import { ToastComponent } from './shared/components';
 export class App implements OnInit {
   private authService = inject(AuthService);
   private notificationService = inject(NotificationService);
+  private themeService = inject(ThemeService);
 
   notifications = this.notificationService.notifications;
 
   ngOnInit(): void {
+    this.themeService.initializeTheme();
+
     // Initialize auth state
     const isAuthenticated = this.authService.isAuthenticated();
     console.log('Application initialized. User authenticated:', isAuthenticated);

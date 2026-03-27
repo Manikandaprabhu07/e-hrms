@@ -12,3 +12,4 @@ export * from './dashboard.service';
 export * from './feedback.service';
 export * from './chatbar.service';
 export * from './event.service';
+export * from './theme.service';

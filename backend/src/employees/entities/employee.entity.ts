@@ -46,6 +46,12 @@ export class Employee {
     @Column({ unique: true })
     email: string;
 
+    @Column({ type: 'text', nullable: true })
+    avatar: string;
+
+    @Column({ type: 'text', nullable: true })
+    profilePhoto: string;
+
     @Column({ nullable: true })
     phone: string;
 
@@ -97,6 +103,15 @@ export class Employee {
 
     @Column({ default: true })
     isActive: boolean;
+
+    @Column({ type: 'simple-json', nullable: true })
+    documents: Array<{
+        id: string;
+        name: string;
+        category: string;
+        contentType: string;
+        dataUrl: string;
+    }>;
 
     @Column({ nullable: true })
     userId: string;

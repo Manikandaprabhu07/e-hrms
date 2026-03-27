@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TrainingService, AuthService } from '../../core/services';
 import { LoadingSpinnerComponent, CardComponent } from '../../shared/components';
 import { FormsModule } from '@angular/forms';
+import { EmployeeService } from '../../core/services/employee.service';
 
 @Component({
     selector: 'app-training-list',
@@ -108,7 +109,7 @@ import { FormsModule } from '@angular/forms';
                     <td>
                       <div class="actions-cell">
                         <button class="btn btn-sm btn-primary" (click)="openDetails(session)">Details</button>
-                        <button class="btn btn-sm btn-secondary" (click)="assignToEmployees(session)">Assign</button>
+                        <button class="btn btn-sm btn-secondary" (click)="openAssignModal(session)">Assign</button>
                         <button class="btn btn-sm btn-secondary" (click)="deleteTraining(session)">Delete</button>
                       </div>
                     </td>
@@ -215,6 +216,51 @@ import { FormsModule } from '@angular/forms';
               }
             </div>
           }
+        </div>
+      </div>
+    }
+
+    @if (assignTraining(); as training) {
+      <div class="details-backdrop" (click)="closeAssignModal()"></div>
+      <div class="assign-modal">
+        <div class="details-header">
+          <div>
+            <div class="details-title">Assign Training</div>
+            <div class="details-subtitle">{{ training.title }}</div>
+          </div>
+          <button class="icon-btn" (click)="closeAssignModal()">x</button>
+        </div>
+
+        <div class="assign-body">
+          <label for="employee-select">Choose employee</label>
+          <select
+            id="employee-select"
+            class="assign-select"
+            [ngModel]="selectedEmployeeId()"
+            (ngModelChange)="selectedEmployeeId.set($event)"
+          >
+            <option value="">Select an employee</option>
+            @for (employee of employees(); track employee.id) {
+              <option [value]="employee.id">
+                {{ employee.firstName }} {{ employee.lastName }} ({{ employee.employeeId }}) - {{ employee.department }}
+              </option>
+            }
+          </select>
+
+          <div class="assign-help">
+            Assigned employees will appear in training participation and employee progress.
+          </div>
+
+          <div class="form-actions">
+            <button
+              class="btn btn-primary"
+              [disabled]="!selectedEmployeeId() || isAssigning()"
+              (click)="assignToEmployees(training)"
+            >
+              {{ isAssigning() ? 'Assigning...' : 'Assign Employee' }}
+            </button>
+            <button class="btn btn-secondary" [disabled]="isAssigning()" (click)="closeAssignModal()">Cancel</button>
+          </div>
         </div>
       </div>
     }
@@ -478,6 +524,52 @@ import { FormsModule } from '@angular/forms';
       overflow: hidden;
     }
 
+    .assign-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(560px, calc(100vw - 32px));
+      background: rgba(255,255,255,0.98);
+      border: 1px solid rgba(226,232,240,0.9);
+      border-radius: 18px;
+      z-index: 350;
+      box-shadow: 0 25px 55px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+
+    .assign-body {
+      padding: 18px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .assign-body label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .assign-select {
+      width: 100%;
+      min-height: 48px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #0f172a;
+      padding: 0 12px;
+      outline: none;
+    }
+
+    .assign-help {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+
     .details-header {
       display:flex;
       justify-content: space-between;
@@ -525,15 +617,20 @@ import { FormsModule } from '@angular/forms';
 export class TrainingListComponent implements OnInit {
     private trainingService = inject(TrainingService);
     private authService = inject(AuthService);
+    private employeeService = inject(EmployeeService);
 
     sessions = this.trainingService.sessions;
     myAssignments = this.trainingService.myAssignments;
     isLoading = this.trainingService.isLoading;
     isAdmin = computed(() => this.authService.hasRole('ADMIN'));
+    employees = this.employeeService.employees;
 
     showForm = signal(false);
     details = signal<any | null>(null);
     detailsAssignments = signal<any[]>([]);
+    assignTraining = signal<any | null>(null);
+    selectedEmployeeId = signal('');
+    isAssigning = signal(false);
     form = {
       title: '',
       description: '',
@@ -548,6 +645,10 @@ export class TrainingListComponent implements OnInit {
     ngOnInit(): void {
         if (this.isAdmin()) {
           this.trainingService.loadSessions();
+          this.employeeService.getEmployees({
+            pageNumber: 1,
+            pageSize: 500,
+          }).catch(() => void 0);
         } else {
           this.trainingService.loadMyAssignments();
         }
@@ -577,9 +678,34 @@ export class TrainingListComponent implements OnInit {
       this.detailsAssignments.set([]);
     }
 
+    openAssignModal(session: any): void {
+      this.assignTraining.set(session || null);
+      this.selectedEmployeeId.set('');
+    }
+
+    closeAssignModal(): void {
+      if (this.isAssigning()) return;
+      this.assignTraining.set(null);
+      this.selectedEmployeeId.set('');
+    }
+
     async assignToEmployees(session: any): Promise<void> {
-      if (!session?.id) return;
-      await this.trainingService.backfillAssignments(session.id);
+      if (!session?.id || !this.selectedEmployeeId()) return;
+
+      this.isAssigning.set(true);
+      try {
+        await this.trainingService.assignEmployees(session.id, [this.selectedEmployeeId()]);
+        await this.trainingService.loadSessions();
+
+        if (this.details()?.id === session.id) {
+          const list = await this.trainingService.getAssignmentsForTraining(session.id);
+          this.detailsAssignments.set(list || []);
+        }
+
+        this.closeAssignModal();
+      } finally {
+        this.isAssigning.set(false);
+      }
     }
 
     async deleteTraining(session: any): Promise<void> {

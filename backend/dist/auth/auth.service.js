@@ -125,6 +125,49 @@ let AuthService = class AuthService {
         const { password, ...result } = user;
         return result;
     }
+    async changePassword(userId, payload) {
+        const user = await this.usersService.findOne(userId);
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        if (payload.newPassword !== payload.confirmPassword) {
+            throw new common_1.BadRequestException('Passwords do not match');
+        }
+        if (String(payload.newPassword).length < 8) {
+            throw new common_1.BadRequestException('New password must be at least 8 characters');
+        }
+        const matches = await bcrypt.compare(payload.currentPassword, user.password);
+        if (!matches) {
+            throw new common_1.UnauthorizedException('Current password is incorrect');
+        }
+        const hashedPassword = await bcrypt.hash(String(payload.newPassword), 10);
+        await this.usersService.update(userId, { password: hashedPassword });
+        return { message: 'Password changed successfully' };
+    }
+    async changeEmail(userId, payload) {
+        const user = await this.usersService.findOne(userId);
+        if (!user) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        const matches = await bcrypt.compare(payload.password, user.password);
+        if (!matches) {
+            throw new common_1.UnauthorizedException('Password is incorrect');
+        }
+        const normalizedEmail = String(payload.newEmail || '').trim().toLowerCase();
+        if (!normalizedEmail) {
+            throw new common_1.BadRequestException('New email is required');
+        }
+        const existingUser = await this.usersService.findOneByEmail(normalizedEmail);
+        if (existingUser && existingUser.id !== userId) {
+            throw new common_1.ConflictException('Email already exists');
+        }
+        const updatedUser = await this.usersService.update(userId, { email: normalizedEmail });
+        const { password, ...safeUser } = updatedUser;
+        return {
+            message: 'Email changed successfully',
+            user: safeUser,
+        };
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

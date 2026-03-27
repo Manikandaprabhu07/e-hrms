@@ -1,8 +1,10 @@
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { Employee } from '../employees/entities/employee.entity';
 export declare class UsersService {
     private usersRepository;
-    constructor(usersRepository: Repository<User>);
+    private employeesRepository;
+    constructor(usersRepository: Repository<User>, employeesRepository: Repository<Employee>);
     findOneByEmail(email: string): Promise<User | null>;
     findOneByEmailOrUsername(emailOrUsername: string): Promise<User | null>;
     create(userData: Partial<User>): Promise<User>;

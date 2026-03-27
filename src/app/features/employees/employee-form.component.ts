@@ -20,10 +20,16 @@ import { EmployeeService } from '../../core/services/employee.service';
       <!-- Step Progress Indicator -->
       <div class="steps-indicator">
         @for (step of steps; track step.id; let i = $index) {
-          <div class="step" [class.active]="currentStep() === i" [class.completed]="i < currentStep()">
+          <button
+            type="button"
+            class="step"
+            [class.active]="currentStep() === i"
+            [class.completed]="i < currentStep()"
+            (click)="goToStep(i)"
+          >
             <div class="step-number">{{ i + 1 }}</div>
             <div class="step-label">{{ step.label }}</div>
-          </div>
+          </button>
         }
       </div>
 
@@ -115,6 +121,12 @@ import { EmployeeService } from '../../core/services/employee.service';
                 <label>Profile Photo</label>
                 <input type="file" accept="image/*" (change)="onFileSelect($event, 'profilePhoto')" />
                 <small>Upload a professional photo (JPG, PNG - Max 2MB)</small>
+                @if (profilePhotoPreview()) {
+                  <div class="upload-preview">
+                    <img [src]="profilePhotoPreview()" alt="Profile preview" class="profile-preview" />
+                    <span>{{ uploadedDocumentCount() }} document(s) ready</span>
+                  </div>
+                }
               </div>
             </div>
           </app-card>
@@ -366,30 +378,45 @@ import { EmployeeService } from '../../core/services/employee.service';
                 <label>Resume (PDF)</label>
                 <input type="file" accept=".pdf" (change)="onFileSelect($event, 'resume')" />
                 <small>Upload resume in PDF format (Max 5MB)</small>
+                @if (selectedFileNames()['resume']) {
+                  <span class="file-pill">{{ selectedFileNames()['resume'] }}</span>
+                }
               </div>
 
               <div class="form-group full-width">
                 <label>Offer Letter</label>
                 <input type="file" accept=".pdf" (change)="onFileSelect($event, 'offerLetter')" />
                 <small>Upload offer letter (PDF - Max 5MB)</small>
+                @if (selectedFileNames()['offerLetter']) {
+                  <span class="file-pill">{{ selectedFileNames()['offerLetter'] }}</span>
+                }
               </div>
 
               <div class="form-group full-width">
                 <label>Experience Certificates</label>
                 <input type="file" accept=".pdf" multiple (change)="onFileSelect($event, 'experienceCerts')" />
                 <small>Upload experience certificates (PDF - Max 5MB each)</small>
+                @if (selectedFileNames()['experienceCerts']) {
+                  <span class="file-pill">{{ selectedFileNames()['experienceCerts'] }}</span>
+                }
               </div>
 
               <div class="form-group full-width">
                 <label>Educational Certificates</label>
                 <input type="file" accept=".pdf,.jpg,.png" multiple (change)="onFileSelect($event, 'educationCerts')" />
                 <small>Upload educational certificates (PDF/Image - Max 5MB each)</small>
+                @if (selectedFileNames()['educationCerts']) {
+                  <span class="file-pill">{{ selectedFileNames()['educationCerts'] }}</span>
+                }
               </div>
 
               <div class="form-group full-width">
                 <label>ID Proof Upload</label>
                 <input type="file" accept=".pdf,.jpg,.png" (change)="onFileSelect($event, 'idProof')" />
                 <small>Upload Aadhaar/PAN/Passport (PDF/Image - Max 5MB)</small>
+                @if (selectedFileNames()['idProof']) {
+                  <span class="file-pill">{{ selectedFileNames()['idProof'] }}</span>
+                }
               </div>
             </div>
           </app-card>
@@ -643,6 +670,9 @@ import { EmployeeService } from '../../core/services/employee.service';
       align-items: center;
       flex: 1;
       position: relative;
+      border: none;
+      background: transparent;
+      cursor: pointer;
     }
 
     .step:not(:last-child)::after {
@@ -707,6 +737,41 @@ import { EmployeeService } from '../../core/services/employee.service';
     .form-group {
       display: flex;
       flex-direction: column;
+    }
+
+    .upload-preview {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(239, 246, 255, 0.9);
+      border: 1px solid rgba(191, 219, 254, 0.9);
+      font-size: 12px;
+      font-weight: 700;
+      color: #1d4ed8;
+    }
+
+    .profile-preview {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #ffffff;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.14);
+    }
+
+    .file-pill {
+      display: inline-flex;
+      margin-top: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(241, 245, 249, 0.95);
+      color: #334155;
+      font-size: 12px;
+      font-weight: 700;
+      width: fit-content;
     }
 
     .form-group.full-width {
@@ -867,6 +932,10 @@ export class EmployeeFormComponent implements OnInit {
 
   isEditMode = signal(false);
   currentStep = signal(0);
+  profilePhotoPreview = signal<string>('');
+  uploadedDocuments = signal<any[]>([]);
+  selectedFileNames = signal<Record<string, string>>({});
+  uploadedDocumentCount = computed(() => this.uploadedDocuments().length);
 
   steps = [
     { id: 1, label: 'Basic Details' },
@@ -1021,6 +1090,16 @@ export class EmployeeFormComponent implements OnInit {
       nationality: employee.nationality,
       passportNumber: employee.passportNumber
     });
+
+    this.profilePhotoPreview.set((employee as any).profilePhoto || (employee as any).avatar || '');
+    const existingDocuments = Array.isArray((employee as any).documents) ? ((employee as any).documents as any[]) : [];
+    this.uploadedDocuments.set(existingDocuments);
+    this.selectedFileNames.set(
+      existingDocuments.reduce((acc: Record<string, string>, doc: any) => {
+        acc[doc.category] = acc[doc.category] ? `${acc[doc.category]}, ${doc.name}` : doc.name;
+        return acc;
+      }, {}),
+    );
   }
 
   calculatedAge(): string {
@@ -1067,6 +1146,11 @@ export class EmployeeFormComponent implements OnInit {
     }
   }
 
+  goToStep(stepIndex: number): void {
+    this.currentStep.set(stepIndex);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   isFieldInvalid(fieldName: string): boolean {
     const field = this.employeeForm.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched));
@@ -1079,13 +1163,48 @@ export class EmployeeFormComponent implements OnInit {
     }
   }
 
-  onFileSelect(event: any, fieldName: string): void {
-    const file = event.target.files[0];
-    if (file) {
-      console.log(`File selected for ${fieldName}:`, file.name);
-      // In real implementation, upload to server and store URL
-      alert(`File "${file.name}" selected for ${fieldName}.`);
+  async onFileSelect(event: any, fieldName: string): Promise<void> {
+    const files = Array.from(event.target.files || []) as File[];
+    if (files.length === 0) {
+      return;
     }
+
+    const maxDocumentBytes = 4 * 1024 * 1024;
+    if (fieldName !== 'profilePhoto' && files.some((file) => file.size > maxDocumentBytes)) {
+      alert('Please upload document files smaller than 4 MB each.');
+      event.target.value = '';
+      return;
+    }
+
+    this.selectedFileNames.update((current) => ({
+      ...current,
+      [fieldName]: files.map((file) => file.name).join(', '),
+    }));
+
+    if (fieldName === 'profilePhoto') {
+      const imageFile = files[0];
+      const dataUrl = await this.readImageAsCompressedDataUrl(imageFile);
+      this.profilePhotoPreview.set(dataUrl);
+      return;
+    }
+
+    const mappedDocuments = await Promise.all(
+      files.map(async (file, index) => {
+        const dataUrl = await this.readFileAsDataUrl(file);
+        return {
+          id: `${fieldName}-${Date.now()}-${index}`,
+          name: file.name,
+          category: fieldName,
+          contentType: file.type || 'application/octet-stream',
+          dataUrl,
+        };
+      }),
+    );
+
+    this.uploadedDocuments.update((current) => {
+      const withoutCurrentCategory = current.filter((doc) => doc.category !== fieldName);
+      return [...withoutCurrentCategory, ...mappedDocuments];
+    });
   }
 
   async onSubmit(): Promise<void> {
@@ -1158,6 +1277,9 @@ export class EmployeeFormComponent implements OnInit {
       employeeId: formData.employeeId,
       firstName: formData.firstName,
       lastName: formData.lastName,
+      avatar: this.profilePhotoPreview() || null,
+      profilePhoto: this.profilePhotoPreview() || null,
+      documents: this.uploadedDocuments(),
       email: formData.officialEmail,
       phone: formData.mobileNumber,
       department: formData.department,
@@ -1182,6 +1304,41 @@ export class EmployeeFormComponent implements OnInit {
       delete payload.user.password;
     }
     return payload;
+  }
+
+  private readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  private async readImageAsCompressedDataUrl(file: File): Promise<string> {
+    const source = await this.readFileAsDataUrl(file);
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        const maxWidth = 480;
+        const scale = Math.min(1, maxWidth / image.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext('2d');
+
+        if (!context) {
+          resolve(source);
+          return;
+        }
+
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.78));
+      };
+
+      image.onerror = () => resolve(source);
+      image.src = source;
+    });
   }
 
   onCancel(): void {

@@ -66,8 +66,8 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
               <option value="intern">Intern</option>
             </select>
 
-            <button class="btn btn-secondary" (click)="exportEmployees()">
-              📥 Export
+            <button class="btn btn-secondary export-btn" (click)="exportEmployees()" [disabled]="isExporting()">
+              {{ isExporting() ? 'Preparing Excel...' : 'Export Excel' }}
             </button>
           </div>
         </div>
@@ -111,7 +111,9 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
                     <td>
                       <div class="employee-info">
                         <img [src]="employee.avatar || getDefaultAvatar(employee)" [alt]="employee.firstName" class="avatar" />
-                        <span class="employee-name">{{ employee.firstName }} {{ employee.lastName }}</span>
+                        <button type="button" class="employee-name-link" (click)="viewEmployee(employee)">
+                          {{ employee.firstName }} {{ employee.lastName }}
+                        </button>
                       </div>
                     </td>
                     <td>{{ employee.email }}</td>
@@ -218,6 +220,7 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
       display: flex;
       flex-direction: column;
       gap: 16px;
+      animation: floatIn 0.45s ease;
     }
 
     .search-box {
@@ -267,6 +270,19 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
       border-color: #3b82f6;
     }
 
+    .export-btn {
+      background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+      color: #1d4ed8;
+      border: 1px solid rgba(59, 130, 246, 0.18);
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.1);
+    }
+
+    .export-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: #1e3a8a;
+    }
+
     .employees-table {
       width: 100%;
       height: calc(100vh - 400px);
@@ -275,6 +291,8 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
       display: block;
       -webkit-overflow-scrolling: touch;
       border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      animation: floatIn 0.55s ease;
     }
 
     table {
@@ -353,6 +371,22 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
     .employee-name {
       font-weight: 600;
       color: #1e293b;
+    }
+
+    .employee-name-link {
+      border: none;
+      background: transparent;
+      padding: 0;
+      font: inherit;
+      font-weight: 700;
+      color: #1e293b;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .employee-name-link:hover {
+      color: #2563eb;
+      text-decoration: underline;
     }
 
     .employee-id {
@@ -464,6 +498,18 @@ import { EmployeeStatus, WorkLocationType, EmploymentType } from '../../core/mod
       border-top: 1px solid #e2e8f0;
     }
 
+    @keyframes floatIn {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .page-info {
       font-size: 14px;
       color: #64748b;
@@ -536,6 +582,7 @@ export class EmployeesListComponent implements OnInit {
 
   // Check if current user is admin
   isAdmin = computed(() => this.authService.hasRole('ADMIN'));
+  isExporting = signal(false);
 
   // Search and filter state
   searchQuery = signal('');
@@ -646,7 +693,93 @@ export class EmployeesListComponent implements OnInit {
   }
 
   exportEmployees(): void {
-    alert(`Exporting ${this.filteredEmployees().length} employees to Excel...`);
+    const employees = this.filteredEmployees();
+    if (employees.length === 0) {
+      alert('No employee data available to export.');
+      return;
+    }
+
+    this.isExporting.set(true);
+
+    try {
+      const rows = employees.map((employee) => ({
+        'Employee ID': employee.employeeId || employee.id,
+        Name: `${employee.firstName} ${employee.lastName}`.trim(),
+        Email: employee.email || '-',
+        Phone: employee.phone || '-',
+        Designation: employee.designation || '-',
+        Department:
+          typeof employee.department === 'string'
+            ? employee.department
+            : employee.department?.name || '-',
+        'Employment Type': this.getEmploymentTypeLabel(employee.employmentType),
+        'Work Location': this.getWorkLocationLabel(employee.workLocation),
+        Salary: employee.salary ?? '-',
+        Status: this.getStatusLabel(employee.employmentStatus),
+        'Date Of Joining': employee.dateOfJoining
+          ? new Date(employee.dateOfJoining).toLocaleDateString()
+          : '-',
+      }));
+
+      const headers = Object.keys(rows[0]);
+      const tableHead = headers.map((header) => `<th>${this.escapeHtml(header)}</th>`).join('');
+      const tableRows = rows
+        .map((row) => {
+          const cells = headers
+            .map((header) => `<td>${this.escapeHtml(String((row as Record<string, string | number>)[header] ?? ''))}</td>`)
+            .join('');
+          return `<tr>${cells}</tr>`;
+        })
+        .join('');
+
+      const workbook = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office"
+              xmlns:x="urn:schemas-microsoft-com:office:excel"
+              xmlns="http://www.w3.org/TR/REC-html40">
+          <head>
+            <meta charset="UTF-8" />
+            <style>
+              table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+              th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+              th { background: #1d4ed8; color: #ffffff; font-weight: 700; }
+              tr:nth-child(even) td { background: #eff6ff; }
+              caption { text-align: left; font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+            </style>
+          </head>
+          <body>
+            <table>
+              <caption>Employee Directory Export</caption>
+              <thead><tr>${tableHead}</tr></thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff', workbook], {
+        type: 'application/vnd.ms-excel;charset=utf-8;',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const today = new Date().toISOString().split('T')[0];
+      link.href = url;
+      link.download = `employees-${today}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } finally {
+      this.isExporting.set(false);
+    }
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   getDefaultAvatar(employee: any): string {

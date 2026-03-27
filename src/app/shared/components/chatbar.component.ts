@@ -123,11 +123,11 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       right: -380px;
       width: 380px;
       height: 100vh;
-      background: rgba(255,255,255,0.92);
+      background: var(--surface-glass-strong);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border-left: 1px solid rgba(226,232,240,0.9);
-      box-shadow: -10px 0 30px rgba(0,0,0,0.08);
+      border-left: 1px solid var(--border-soft);
+      box-shadow: -10px 0 30px var(--shadow-strong);
       z-index: 300;
       transition: right 0.25s ease;
       display: flex;
@@ -147,15 +147,15 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       justify-content: space-between;
       align-items: center;
       padding: 14px 14px;
-      border-bottom: 1px solid rgba(226,232,240,0.9);
+      border-bottom: 1px solid var(--border-soft);
     }
-    .name { font-weight: 800; font-size: 16px; color: #0f172a; }
+    .name { font-weight: 800; font-size: 16px; color: var(--text-primary); }
     .meta { margin-top: 6px; display: flex; gap: 8px; }
     .pill {
       font-size: 11px;
       font-weight: 700;
-      color: #334155;
-      background: #e2e8f0;
+      color: var(--text-secondary);
+      background: var(--surface-subtle);
       padding: 3px 8px;
       border-radius: 999px;
     }
@@ -165,13 +165,13 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       font-size: 22px;
       line-height: 1;
       cursor: pointer;
-      color: #334155;
+      color: var(--text-secondary);
     }
 
     .tabs {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      border-bottom: 1px solid rgba(226,232,240,0.9);
+      border-bottom: 1px solid var(--border-soft);
     }
     .tab {
       padding: 10px 12px;
@@ -179,10 +179,10 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       border: none;
       cursor: pointer;
       font-weight: 800;
-      color: #334155;
+      color: var(--text-secondary);
     }
     .tab.active {
-      color: #0f172a;
+      color: var(--text-primary);
       background: rgba(37,99,235,0.08);
     }
 
@@ -190,33 +190,33 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
     .panel-actions { display: flex; gap: 8px; margin-bottom: 10px; }
 
     .btn {
-      border: 1px solid rgba(148,163,184,0.6);
-      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--border-soft);
+      background: var(--surface-subtle);
       padding: 7px 10px;
       border-radius: 10px;
       cursor: pointer;
       font-weight: 800;
       font-size: 12px;
-      color: #0f172a;
+      color: var(--text-primary);
     }
     .btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    .muted { color: #64748b; font-size: 13px; }
+    .muted { color: var(--text-muted); font-size: 13px; }
 
     .list { display: flex; flex-direction: column; gap: 10px; }
     .item {
-      border: 1px solid rgba(226,232,240,0.9);
-      background: rgba(255,255,255,0.8);
+      border: 1px solid var(--border-soft);
+      background: var(--surface-subtle);
       border-radius: 12px;
       padding: 10px 10px;
       cursor: pointer;
     }
     .item.unread { border-color: rgba(37,99,235,0.45); }
     .item-top { display: flex; justify-content: space-between; gap: 10px; }
-    .item-title { font-weight: 900; font-size: 13px; color: #0f172a; }
-    .item-time { font-size: 11px; color: #64748b; white-space: nowrap; }
-    .item-body { margin-top: 6px; font-size: 12px; color: #334155; }
+    .item-title { font-weight: 900; font-size: 13px; color: var(--text-primary); }
+    .item-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .item-body { margin-top: 6px; font-size: 12px; color: var(--text-secondary); }
 
     .messages { display: flex; flex-direction: column; height: 100%; }
     .msg-list { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 6px; }
@@ -225,31 +225,31 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
     .sender {
       font-size: 11px;
       font-weight: 800;
-      color: #64748b;
+      color: var(--text-muted);
       margin-bottom: 3px;
     }
     .bubble {
       max-width: 90%;
-      background: rgba(15,23,42,0.06);
+      background: var(--surface-subtle);
       padding: 10px 10px;
       border-radius: 12px;
       font-size: 13px;
-      color: #0f172a;
-      border: 1px solid rgba(226,232,240,0.9);
+      color: var(--text-primary);
+      border: 1px solid var(--border-soft);
     }
     .msg.mine .bubble {
       background: rgba(37,99,235,0.10);
       border-color: rgba(37,99,235,0.18);
     }
-    .msg-time { font-size: 11px; color: #64748b; margin-top: 4px; }
+    .msg-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
     .composer { display: flex; gap: 8px; margin-top: 10px; }
     .composer input {
       flex: 1;
       padding: 10px 10px;
       border-radius: 12px;
-      border: 1px solid rgba(226,232,240,0.9);
+      border: 1px solid var(--border-soft);
       outline: none;
-      background: rgba(255,255,255,0.9);
+      background: var(--surface-glass-strong);
     }
 
     .admin-select {
@@ -258,17 +258,17 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       gap: 6px;
       margin-bottom: 10px;
       padding: 10px;
-      border: 1px solid rgba(226,232,240,0.9);
+      border: 1px solid var(--border-soft);
       border-radius: 12px;
-      background: rgba(255,255,255,0.8);
+      background: var(--surface-subtle);
     }
-    .admin-select label { font-size: 11px; font-weight: 900; color: #475569; }
+    .admin-select label { font-size: 11px; font-weight: 900; color: var(--text-muted); }
     .admin-select select {
       width: 100%;
       padding: 10px 10px;
       border-radius: 12px;
-      border: 1px solid rgba(226,232,240,0.9);
-      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--border-soft);
+      background: var(--surface-glass-strong);
       outline: none;
       font-size: 12px;
     }
@@ -283,8 +283,8 @@ import { AuthService, ChatbarService, EmployeeService } from '../../core/service
       flex: 1;
       padding: 10px 10px;
       border-radius: 12px;
-      border: 1px solid rgba(226,232,240,0.9);
-      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--border-soft);
+      background: var(--surface-glass-strong);
       outline: none;
       font-size: 12px;
     }

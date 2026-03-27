@@ -36,6 +36,17 @@ let AuthController = class AuthController {
     getProfile(req) {
         return req.user;
     }
+    async changePassword(req, body) {
+        return this.authService.changePassword(req.user.id, body);
+    }
+    async changeEmail(req, body) {
+        const roles = Array.isArray(req.user?.roles) ? req.user.roles : [];
+        const isAdmin = roles.includes('ADMIN');
+        if (!isAdmin) {
+            throw new common_1.ForbiddenException('Only admins can change email addresses.');
+        }
+        return this.authService.changeEmail(req.user.id, body);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -69,6 +80,22 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.Post)('change-password'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "changePassword", null);
+__decorate([
+    (0, common_1.Post)('change-email'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "changeEmail", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

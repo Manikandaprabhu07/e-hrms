@@ -39,8 +39,8 @@ export class TrainingController {
 
     @Post(':id/assign')
     @Roles('ADMIN')
-    backfill(@Param('id') id: string) {
-        return this.trainingService.backfillAssignments(id);
+    backfill(@Param('id') id: string, @Body() body: any) {
+        return this.trainingService.backfillAssignments(id, body);
     }
 
     @Patch(':id')

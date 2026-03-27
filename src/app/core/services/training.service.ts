@@ -141,6 +141,17 @@ export class TrainingService {
         });
     }
 
+    assignEmployees(trainingId: string, employeeIds: string[]): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.http.post<any>(`${this.apiUrl}/${trainingId}/assign`, {
+                participantEmployeeIds: employeeIds,
+            }).subscribe({
+                next: (res) => resolve(res),
+                error: (err) => reject(err),
+            });
+        });
+    }
+
     getAssignmentsForTraining(trainingId: string): Promise<any[]> {
         return new Promise((resolve, reject) => {
             this.http.get<any[]>(`${this.apiUrl}/${trainingId}/assignments`).subscribe({

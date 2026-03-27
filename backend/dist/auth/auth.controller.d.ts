@@ -39,4 +39,11 @@ export declare class AuthController {
         updatedAt: Date;
     }>;
     getProfile(req: any): any;
+    changePassword(req: any, body: any): Promise<{
+        message: string;
+    }>;
+    changeEmail(req: any, body: any): Promise<{
+        message: string;
+        user: any;
+    }>;
 }

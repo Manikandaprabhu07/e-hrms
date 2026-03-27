@@ -13,12 +13,13 @@ const users_service_1 = require("./users.service");
 const user_entity_1 = require("./entities/user.entity");
 const users_controller_1 = require("./users.controller");
 const access_module_1 = require("../access/access.module");
+const employee_entity_1 = require("../employees/entities/employee.entity");
 let UsersModule = class UsersModule {
 };
 exports.UsersModule = UsersModule;
 exports.UsersModule = UsersModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User]), access_module_1.AccessModule],
+        imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, employee_entity_1.Employee]), access_module_1.AccessModule],
         providers: [users_service_1.UsersService],
         controllers: [users_controller_1.UsersController],
         exports: [users_service_1.UsersService],

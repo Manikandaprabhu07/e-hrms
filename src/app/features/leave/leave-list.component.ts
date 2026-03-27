@@ -1,12 +1,13 @@
 import { Component, ChangeDetectionStrategy, signal, OnInit, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CardComponent } from '../../shared/components';
 import { LeaveService, AuthService } from '../../core/services';
 
 interface LeaveRequest {
   id: string;
+  employeeId?: string;
   employeeName: string;
   employeeAvatar: string;
   leaveType: string;
@@ -131,7 +132,13 @@ interface LeaveRequest {
                   <td>
                     <div class="employee-info">
                       <img [src]="leave.employeeAvatar" [alt]="leave.employeeName" class="avatar" />
-                      <span class="employee-name">{{ leave.employeeName }}</span>
+                      @if (isAdmin()) {
+                        <button type="button" class="employee-name-link" (click)="goToEmployee(leave.employeeId); $event.stopPropagation()">
+                          {{ leave.employeeName }}
+                        </button>
+                      } @else {
+                        <span class="employee-name">{{ leave.employeeName }}</span>
+                      }
                     </div>
                   </td>
                   <td>
@@ -162,9 +169,12 @@ interface LeaveRequest {
                       @if (leave.status === 'Pending') {
                         <button class="btn btn-sm btn-success" (click)="approveLeave(leave.id)">Approve</button>
                         <button class="btn btn-sm btn-danger" (click)="rejectLeave(leave.id)">Reject</button>
+                        <button class="btn btn-sm btn-secondary" (click)="openDetails(leave)">View</button>
                       } @else {
-                        <button class="btn btn-sm btn-secondary">View</button>
+                        <button class="btn btn-sm btn-secondary" (click)="openDetails(leave)">View</button>
                       }
+                    } @else {
+                      <button class="btn btn-sm btn-secondary" (click)="openDetails(leave)">View</button>
                     }
                   </td>
                 </tr>
@@ -173,6 +183,52 @@ interface LeaveRequest {
           </table>
         </div>
       </app-card>
+
+      @if (selectedLeave()) {
+        <div class="details-backdrop" (click)="closeDetails()">
+          <div class="details-modal" (click)="$event.stopPropagation()">
+            <div class="details-header">
+              <div>
+                <div class="details-title">Leave Details</div>
+                <div class="details-subtitle">{{ selectedLeave()!.employeeName }}</div>
+              </div>
+              <button class="close-btn" (click)="closeDetails()">Close</button>
+            </div>
+
+            <div class="details-grid">
+              <div class="detail-item">
+                <span class="detail-label">Leave Type</span>
+                <span class="detail-value">{{ selectedLeave()!.leaveType }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Status</span>
+                <span class="detail-value">{{ selectedLeave()!.status }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Start Date</span>
+                <span class="detail-value">{{ selectedLeave()!.startDate }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">End Date</span>
+                <span class="detail-value">{{ selectedLeave()!.endDate }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Duration</span>
+                <span class="detail-value">{{ selectedLeave()!.days }} days</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Applied On</span>
+                <span class="detail-value">{{ selectedLeave()!.appliedOn || '-' }}</span>
+              </div>
+            </div>
+
+            <div class="detail-note">
+              <span class="detail-label">Reason</span>
+              <p>{{ selectedLeave()!.reason }}</p>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -203,6 +259,7 @@ interface LeaveRequest {
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
       margin-bottom: 24px;
+      animation: liftIn 0.45s ease;
     }
 
     .stat-card {
@@ -263,6 +320,7 @@ interface LeaveRequest {
 
     .leave-table {
       overflow-x: auto;
+      animation: liftIn 0.55s ease;
     }
 
     table {
@@ -305,6 +363,22 @@ interface LeaveRequest {
     .employee-name {
       font-weight: 600;
       color: #1e293b;
+    }
+
+    .employee-name-link {
+      border: none;
+      background: transparent;
+      padding: 0;
+      font: inherit;
+      font-weight: 700;
+      color: #1e293b;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .employee-name-link:hover {
+      color: #2563eb;
+      text-decoration: underline;
     }
 
     .leave-type-badge {
@@ -492,6 +566,121 @@ interface LeaveRequest {
       border-radius: 6px;
       font-size: 13px;
     }
+
+    .details-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 1200;
+      backdrop-filter: blur(8px);
+    }
+
+    .details-modal {
+      width: min(680px, 100%);
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 30px 70px rgba(15, 23, 42, 0.22);
+      animation: modalIn 0.2s ease;
+    }
+
+    .details-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .details-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .details-subtitle {
+      margin-top: 4px;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      border: none;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #0f172a;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .detail-item,
+    .detail-note {
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(239, 246, 255, 0.8));
+      padding: 14px 16px;
+    }
+
+    .detail-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .detail-value {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .detail-note p {
+      margin: 0;
+      color: #334155;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    @keyframes liftIn {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -499,9 +688,11 @@ export class LeaveListComponent implements OnInit {
   private leaveService = inject(LeaveService);
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   isAdmin = computed(() => this.authService.hasRole('ADMIN'));
   leaveRequests = signal<LeaveRequest[]>([]);
+  selectedLeave = signal<LeaveRequest | null>(null);
   latestLeave = computed(() => this.leaveRequests()[0] || null);
   showRequestForm = signal(false);
   newLeave = {
@@ -532,6 +723,7 @@ export class LeaveListComponent implements OnInit {
       const employeeName = `${employee.firstName || ''} ${employee.lastName || ''}`.trim() || 'Unknown';
       return {
         id: leave.id,
+        employeeId: employee.id,
         employeeName,
         employeeAvatar: employee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(employeeName || 'User')}&background=1e40af&color=fff`,
         leaveType: leave.leaveType || 'Leave',
@@ -593,5 +785,19 @@ export class LeaveListComponent implements OnInit {
 
   toggleRequestForm(): void {
     this.showRequestForm.update((value) => !value);
+  }
+
+  openDetails(leave: LeaveRequest): void {
+    this.selectedLeave.set(leave);
+  }
+
+  closeDetails(): void {
+    this.selectedLeave.set(null);
+  }
+
+  goToEmployee(employeeId?: string): void {
+    if (employeeId) {
+      this.router.navigate(['/employees', employeeId]);
+    }
   }
 }

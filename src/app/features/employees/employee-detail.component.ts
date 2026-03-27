@@ -15,7 +15,7 @@ import { CardComponent } from '../../shared/components';
       <div class="profile-header card-glass">
         <div class="profile-info-main">
           <div class="profile-avatar">
-            <img [src]="emp.avatar || 'https://ui-avatars.com/api/?name=' + emp.firstName + '+' + emp.lastName" [alt]="emp.firstName">
+            <img [src]="emp.profilePhoto || emp.avatar || 'https://ui-avatars.com/api/?name=' + emp.firstName + '+' + emp.lastName" [alt]="emp.firstName">
           </div>
           <div class="profile-meta">
             <h1>{{ emp.firstName }} {{ emp.lastName }}</h1>
@@ -127,11 +127,24 @@ import { CardComponent } from '../../shared/components';
           <!-- Documents Vault -->
           <div *ngIf="activeTab() === 'documents'">
             <app-card [title]="'Documents Vault'" [elevated]="true">
-              <div class="empty-state">
-                <div class="icon">📁</div>
-                <p>No documents uploaded yet.</p>
-                <button class="btn btn-outline-sm">Upload New Document</button>
-              </div>
+              @if (employeeDocuments().length > 0) {
+                <div class="document-list">
+                  @for (doc of employeeDocuments(); track doc.id) {
+                    <a class="document-item" [href]="doc.dataUrl" [download]="doc.name" target="_blank" rel="noopener">
+                      <div>
+                        <div class="document-name">{{ doc.name }}</div>
+                        <div class="document-meta">{{ doc.category }}</div>
+                      </div>
+                      <span class="document-action">Download</span>
+                    </a>
+                  }
+                </div>
+              } @else {
+                <div class="empty-state">
+                  <div class="icon">Files</div>
+                  <p>No documents uploaded yet.</p>
+                </div>
+              }
             </app-card>
           </div>
 
@@ -344,6 +357,44 @@ import { CardComponent } from '../../shared/components';
 
     .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
 
+    .document-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .document-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      text-decoration: none;
+      background: rgba(248, 250, 252, 0.9);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      color: inherit;
+    }
+
+    .document-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .document-meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #64748b;
+      text-transform: capitalize;
+    }
+
+    .document-action {
+      font-size: 12px;
+      font-weight: 700;
+      color: #2563eb;
+      white-space: nowrap;
+    }
+
     .loading-state {
       height: 60vh;
       display: flex;
@@ -382,6 +433,10 @@ export class EmployeeDetailComponent implements OnInit {
   employee = signal<Employee | null>(null);
   isLoading = signal(true);
   activeTab = signal('personal');
+  employeeDocuments = computed(() => {
+    const employee = this.employee() as any;
+    return Array.isArray(employee?.documents) ? employee.documents : [];
+  });
 
   async ngOnInit(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('id');

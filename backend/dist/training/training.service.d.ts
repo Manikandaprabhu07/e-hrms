@@ -12,6 +12,7 @@ export declare class TrainingService {
     private usersService;
     constructor(trainingRepository: Repository<Training>, assignmentsRepository: Repository<TrainingAssignment>, employeesRepository: Repository<Employee>, notificationsService: NotificationsService, usersService: UsersService);
     findAll(): Promise<Training[]>;
+    private syncTrainingParticipants;
     private normalizeFilterValue;
     private resolveEmployeesForAssignment;
     private assignTrainingToEmployees;
@@ -20,7 +21,7 @@ export declare class TrainingService {
     listAssignmentsForTraining(trainingId: string): Promise<TrainingAssignment[]>;
     create(trainingData: Partial<Training>): Promise<Training>;
     createWithAssignments(input: any): Promise<Training>;
-    backfillAssignments(trainingId: string): Promise<{
+    backfillAssignments(trainingId: string, input?: any): Promise<{
         inserted: number;
         targeted: number;
     }>;

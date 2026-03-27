@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
@@ -28,6 +28,7 @@ export class AccountSettingsComponent {
 
   currentUser = this.authService.user;
   isLoading = this.authService.isLoading;
+  isAdmin = computed(() => this.authService.hasRole('ADMIN'));
 
   constructor() {
     this.initializeForms();
@@ -112,6 +113,11 @@ export class AccountSettingsComponent {
    * Handle email change submission
    */
   async onChangeEmail(): Promise<void> {
+    if (!this.isAdmin()) {
+      this.notificationService.error('Only admins can change email addresses');
+      return;
+    }
+
     if (this.changeEmailForm.invalid) {
       this.notificationService.error('Please fill in all required fields correctly');
       return;

@@ -24,6 +24,29 @@ export class TrainingService {
         return this.trainingRepository.find({ relations: ['participants'] });
     }
 
+    private async syncTrainingParticipants(trainingId: string, employees: Employee[]): Promise<void> {
+        if (!employees.length) return;
+
+        const training = await this.trainingRepository.findOne({
+            where: { id: trainingId },
+            relations: ['participants'],
+        });
+
+        if (!training) return;
+
+        const existingParticipants = training.participants || [];
+        const seen = new Set(existingParticipants.map((participant) => participant.id));
+
+        for (const employee of employees) {
+            if (seen.has(employee.id)) continue;
+            existingParticipants.push(employee);
+            seen.add(employee.id);
+        }
+
+        training.participants = existingParticipants;
+        await this.trainingRepository.save(training);
+    }
+
     private normalizeFilterValue(v: any): string | null {
         if (v === undefined || v === null) return null;
         const s = String(v).trim().toLowerCase();
@@ -72,6 +95,8 @@ export class TrainingService {
                 throw e;
             }
         }
+
+        await this.syncTrainingParticipants(training.id, employees);
 
         if (notify && employees.length) {
             const userIds = employees.map((e) => e.userId).filter(Boolean) as string[];
@@ -147,11 +172,11 @@ export class TrainingService {
         return saved;
     }
 
-    async backfillAssignments(trainingId: string): Promise<{ inserted: number; targeted: number }> {
+    async backfillAssignments(trainingId: string, input: any = {}): Promise<{ inserted: number; targeted: number }> {
         const training = await this.trainingRepository.findOne({ where: { id: trainingId } });
         if (!training) throw new NotFoundException('Training not found');
 
-        const employees = await this.resolveEmployeesForAssignment({}, training);
+        const employees = await this.resolveEmployeesForAssignment(input, training);
         const { inserted } = await this.assignTrainingToEmployees(training, employees, false);
         return { inserted, targeted: employees.length };
     }

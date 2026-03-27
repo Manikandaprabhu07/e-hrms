@@ -17,20 +17,32 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./entities/user.entity");
+const employee_entity_1 = require("../employees/entities/employee.entity");
 let UsersService = class UsersService {
-    constructor(usersRepository) {
+    constructor(usersRepository, employeesRepository) {
         this.usersRepository = usersRepository;
+        this.employeesRepository = employeesRepository;
     }
     async findOneByEmail(email) {
         return this.usersRepository.findOne({ where: { email } });
     }
-    findOneByEmailOrUsername(emailOrUsername) {
-        return this.usersRepository.findOne({
+    async findOneByEmailOrUsername(emailOrUsername) {
+        const directUser = await this.usersRepository.findOne({
             where: [
                 { email: emailOrUsername },
                 { username: emailOrUsername },
             ],
         });
+        if (directUser) {
+            return directUser;
+        }
+        const employee = await this.employeesRepository.findOne({
+            where: { employeeId: emailOrUsername },
+        });
+        if (!employee?.userId) {
+            return null;
+        }
+        return this.usersRepository.findOne({ where: { id: employee.userId } });
     }
     async create(userData) {
         const user = this.usersRepository.create(userData);
@@ -58,6 +70,8 @@ exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(employee_entity_1.Employee)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map
