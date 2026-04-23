@@ -13,3 +13,5 @@ export * from './feedback.service';
 export * from './chatbar.service';
 export * from './event.service';
 export * from './theme.service';
+export * from './frappe-hr.service';
+export * from './recruitment.service';

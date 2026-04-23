@@ -16,9 +16,15 @@ exports.MessagesController = void 0;
 const common_1 = require("@nestjs/common");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const messages_service_1 = require("./messages.service");
+const public_decorator_1 = require("../auth/decorators/public.decorator");
+const jwt_1 = require("@nestjs/jwt");
+const config_1 = require("@nestjs/config");
+const jwt_secret_1 = require("../auth/jwt-secret");
 let MessagesController = class MessagesController {
-    constructor(messagesService) {
+    constructor(messagesService, jwtService, configService) {
         this.messagesService = messagesService;
+        this.jwtService = jwtService;
+        this.configService = configService;
     }
     myConversations(req) {
         return this.messagesService.listMyConversations(req.user.id);
@@ -38,6 +44,20 @@ let MessagesController = class MessagesController {
     }
     send(req, id, body) {
         return this.messagesService.sendMessage(id, req.user.id, body.content);
+    }
+    async stream(id, token) {
+        if (!token) {
+            throw new common_1.UnauthorizedException('Access token is required');
+        }
+        try {
+            const payload = await this.jwtService.verifyAsync(token, {
+                secret: (0, jwt_secret_1.getJwtSecret)(this.configService),
+            });
+            return this.messagesService.getConversationStream(id, payload.sub);
+        }
+        catch {
+            throw new common_1.UnauthorizedException('Invalid access token');
+        }
     }
 };
 exports.MessagesController = MessagesController;
@@ -93,8 +113,19 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, Object]),
     __metadata("design:returntype", void 0)
 ], MessagesController.prototype, "send", null);
+__decorate([
+    (0, common_1.Sse)('conversations/:id/stream'),
+    (0, public_decorator_1.Public)(),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Query)('token')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], MessagesController.prototype, "stream", null);
 exports.MessagesController = MessagesController = __decorate([
     (0, common_1.Controller)('messages'),
-    __metadata("design:paramtypes", [messages_service_1.MessagesService])
+    __metadata("design:paramtypes", [messages_service_1.MessagesService,
+        jwt_1.JwtService,
+        config_1.ConfigService])
 ], MessagesController);
 //# sourceMappingURL=messages.controller.js.map

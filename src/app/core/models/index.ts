@@ -5,3 +5,4 @@ export * from './attendance.model';
 export * from './leave.model';
 export * from './performance.model';
 export * from './common.model';
+export * from './frappe-hr.model';

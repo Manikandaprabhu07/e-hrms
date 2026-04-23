@@ -7,10 +7,12 @@ import { MessagesController } from './messages.controller';
 import { UsersModule } from '../users/users.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { EmployeesModule } from '../employees/employees.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Conversation, Message]),
+    JwtModule.register({}),
     UsersModule,
     EmployeesModule,
     NotificationsModule,
@@ -20,4 +22,3 @@ import { EmployeesModule } from '../employees/employees.module';
   exports: [MessagesService],
 })
 export class MessagesModule { }
-

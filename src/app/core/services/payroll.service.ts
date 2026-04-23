@@ -1,6 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { PayrollSlip, EmployeeSalaryStructure, PaginationParams, PaginatedResponse } from '../models';
+import {
+  PayrollSlip,
+  EmployeeSalaryStructure,
+  PaginationParams,
+  PaginatedResponse,
+  PayrollImportPreview,
+} from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -157,6 +163,47 @@ export class PayrollService {
         },
         error: (error) => {
           this.errorSignal.set(error.error?.message || 'Failed to update salary structure');
+          this.isLoadingSignal.set(false);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  uploadPayrollPreview(file: File): Promise<PayrollImportPreview[]> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.isLoadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    return new Promise((resolve, reject) => {
+      this.http.post<PayrollImportPreview[]>(`${this.apiUrl}/upload-preview`, formData).subscribe({
+        next: (rows) => {
+          this.isLoadingSignal.set(false);
+          resolve(rows);
+        },
+        error: (error) => {
+          this.errorSignal.set(error.error?.message || 'Failed to preview payroll upload');
+          this.isLoadingSignal.set(false);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  saveImportedPayroll(rows: PayrollImportPreview[]): Promise<{ message: string; saved: number; skipped: number }> {
+    this.isLoadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    return new Promise((resolve, reject) => {
+      this.http.post<{ message: string; saved: number; skipped: number }>(`${this.apiUrl}/save-import`, rows).subscribe({
+        next: (response) => {
+          this.isLoadingSignal.set(false);
+          resolve(response);
+        },
+        error: (error) => {
+          this.errorSignal.set(error.error?.message || 'Failed to import payroll records');
           this.isLoadingSignal.set(false);
           reject(error);
         }

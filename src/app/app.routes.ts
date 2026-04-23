@@ -30,6 +30,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/account-settings/account-settings.component').then(m => m.AccountSettingsComponent)
       },
       {
+        path: 'hr',
+        loadChildren: () => import('./features/hr-workspace/hr-workspace.routes').then(m => m.HR_WORKSPACE_ROUTES)
+      },
+      {
         path: 'employees',
         loadChildren: () => import('./features/employees/employees.routes').then(m => m.EMPLOYEES_ROUTES)
       },

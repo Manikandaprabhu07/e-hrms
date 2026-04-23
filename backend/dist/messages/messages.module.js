@@ -16,6 +16,7 @@ const messages_controller_1 = require("./messages.controller");
 const users_module_1 = require("../users/users.module");
 const notifications_module_1 = require("../notifications/notifications.module");
 const employees_module_1 = require("../employees/employees.module");
+const jwt_1 = require("@nestjs/jwt");
 let MessagesModule = class MessagesModule {
 };
 exports.MessagesModule = MessagesModule;
@@ -23,6 +24,7 @@ exports.MessagesModule = MessagesModule = __decorate([
     (0, common_1.Module)({
         imports: [
             typeorm_1.TypeOrmModule.forFeature([conversation_entity_1.Conversation, message_entity_1.Message]),
+            jwt_1.JwtModule.register({}),
             users_module_1.UsersModule,
             employees_module_1.EmployeesModule,
             notifications_module_1.NotificationsModule,

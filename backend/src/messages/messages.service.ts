@@ -6,10 +6,13 @@ import { Message } from './entities/message.entity';
 import { UsersService } from '../users/users.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmployeesService } from '../employees/employees.service';
+import { Observable, Subject } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 
 @Injectable()
 export class MessagesService {
   private cachedAdminUserId: string | null = null;
+  private conversationStreams = new Map<string, Subject<any>>();
 
   constructor(
     @InjectRepository(Conversation)
@@ -112,6 +115,19 @@ export class MessagesService {
     }
   }
 
+  async getConversationStream(conversationId: string, userId: string): Promise<Observable<any>> {
+    await this.assertMember(conversationId, userId);
+    const stream = this.ensureConversationSubject(conversationId);
+    return stream.asObservable().pipe(
+      startWith({
+        type: 'connected',
+        conversationId,
+        timestamp: new Date().toISOString(),
+      }),
+      map((event) => ({ data: event })),
+    );
+  }
+
   async sendMessage(conversationId: string, userId: string, content: string): Promise<Message> {
     const conv = await this.assertMember(conversationId, userId);
     const trimmed = String(content || '').trim();
@@ -141,6 +157,21 @@ export class MessagesService {
       meta: { conversationId: conv.id },
     });
 
+    this.ensureConversationSubject(conv.id).next({
+      type: 'message',
+      conversationId: conv.id,
+      message: saved,
+    });
+
     return saved;
+  }
+
+  private ensureConversationSubject(conversationId: string): Subject<any> {
+    let stream = this.conversationStreams.get(conversationId);
+    if (!stream) {
+      stream = new Subject<any>();
+      this.conversationStreams.set(conversationId, stream);
+    }
+    return stream;
   }
 }

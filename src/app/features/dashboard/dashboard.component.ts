@@ -36,6 +36,20 @@ interface Notice {
   type: 'info' | 'warning' | 'success';
 }
 
+interface FeatureAnalytics {
+  title: string;
+  route: string;
+  score: number;
+  accent: string;
+  detail: string;
+}
+
+interface WorkflowStage {
+  title: string;
+  owner: string;
+  summary: string;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -62,6 +76,68 @@ interface Notice {
                     <span class="kpi-title">{{ stat.title }}</span>
                   </div>
                   <div class="kpi-value">{{ stat.value }}</div>
+                </div>
+              }
+            </div>
+          </section>
+
+          <section class="quick-actions-section">
+            <h2>Platform Features</h2>
+            <div class="quick-actions-grid">
+              @for (feature of dashboardFeatures(); track feature.title) {
+                <button (click)="feature.action()" class="quick-action-btn">
+                  <span class="action-icon">{{ feature.icon }}</span>
+                  <span class="action-title">{{ feature.title }}</span>
+                </button>
+              }
+            </div>
+          </section>
+
+          <div class="dashboard-grid-bottom">
+            <section>
+              <app-card [title]="'Website Navigation Analytics'" [elevated]="true">
+                <p class="section-subtitle">A feature map of your full HRMS navigation with coverage-style analytics.</p>
+                <div style="display:grid; gap:14px; margin-top: 16px;">
+                  @for (item of platformFeatureAnalytics(); track item.title) {
+                    <div style="display:grid; gap:8px;">
+                      <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+                        <div>
+                          <div style="font-weight:800; color:var(--text-primary);">{{ item.title }}</div>
+                          <div class="muted">{{ item.route }} · {{ item.detail }}</div>
+                        </div>
+                        <div [style.color]="item.accent" style="font-weight:900;">{{ item.score }}%</div>
+                      </div>
+                      <div style="height:10px; border-radius:999px; background:#e2e8f0; overflow:hidden;">
+                        <div style="height:100%; border-radius:999px;" [style.width.%]="item.score" [style.background]="item.accent"></div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </app-card>
+            </section>
+
+            <section>
+              <app-card [title]="'AI Feature Roadmap'" [elevated]="true">
+                <div style="display:grid; gap:14px;">
+                  @for (idea of aiFeatureIdeas(); track idea.title) {
+                    <div style="padding:14px; border:1px solid #e2e8f0; border-radius:16px; background:rgba(255,255,255,0.75);">
+                      <div style="font-weight:800; color:var(--text-primary); margin-bottom:4px;">{{ idea.title }}</div>
+                      <div class="muted">{{ idea.summary }}</div>
+                    </div>
+                  }
+                </div>
+              </app-card>
+            </section>
+          </div>
+
+          <section class="quick-actions-section">
+            <h2>Website Workflow</h2>
+            <div class="quick-actions-grid">
+              @for (step of workflowStages(); track step.title) {
+                <div class="quick-action-btn" style="cursor:default; align-items:flex-start;">
+                  <span class="action-icon">{{ step.owner }}</span>
+                  <span class="action-title">{{ step.title }}</span>
+                  <span class="muted" style="display:block; margin-top:6px;">{{ step.summary }}</span>
                 </div>
               }
             </div>
@@ -238,6 +314,18 @@ interface Notice {
                 <div class="kpi-value">{{ employeeDashboard().leaveSummary.rejected }}</div>
                 <div class="trend-text">Rejected requests</div>
               </div>
+            </div>
+          </section>
+
+          <section class="quick-actions-section">
+            <h2>Platform Features</h2>
+            <div class="quick-actions-grid">
+              @for (feature of employeeDashboardFeatures(); track feature.title) {
+                <button (click)="feature.action()" class="quick-action-btn">
+                  <span class="action-icon">{{ feature.icon }}</span>
+                  <span class="action-title">{{ feature.title }}</span>
+                </button>
+              }
             </div>
           </section>
 
@@ -1353,6 +1441,64 @@ export class DashboardComponent {
     { title: 'Manage Leave', icon: 'L', action: () => this.router.navigate(['/leave']) },
     { title: 'Attendance', icon: 'A', action: () => this.router.navigate(['/attendance']) },
     { title: 'Payroll', icon: 'P', action: () => this.router.navigate(['/payroll']) },
+  ];
+
+  dashboardFeatures = (): QuickAction[] => [
+    { title: 'Employees', icon: '👥', action: () => this.router.navigate(['/employees']) },
+    { title: 'Attendance', icon: '✅', action: () => this.router.navigate(['/attendance']) },
+    { title: 'Leave', icon: '📋', action: () => this.router.navigate(['/leave']) },
+    { title: 'Payroll', icon: '💰', action: () => this.router.navigate(['/payroll']) },
+    { title: 'Workspace', icon: 'WS', action: () => this.router.navigate(['/hr']) },
+    { title: 'Recruitment', icon: '🧲', action: () => this.router.navigate(['/hr/recruitment']) },
+    { title: 'Shifts', icon: '🕒', action: () => this.router.navigate(['/hr/shifts']) },
+    { title: 'Expenses', icon: '💸', action: () => this.router.navigate(['/hr/expenses']) },
+    { title: 'Reports', icon: '📈', action: () => this.router.navigate(['/hr/reports']) },
+  ];
+
+  employeeDashboardFeatures = (): QuickAction[] => [
+    { title: 'Profile', icon: '🙋', action: () => this.router.navigate(['/employees']) },
+    { title: 'Attendance', icon: '✅', action: () => this.router.navigate(['/attendance']) },
+    { title: 'Leave', icon: '📋', action: () => this.router.navigate(['/leave']) },
+    { title: 'Training', icon: '🎓', action: () => this.router.navigate(['/training']) },
+    { title: 'Shifts', icon: '🕒', action: () => this.router.navigate(['/hr/shifts']) },
+    { title: 'Expenses', icon: '💸', action: () => this.router.navigate(['/hr/expenses']) },
+    { title: 'Events', icon: '📅', action: () => this.router.navigate(['/events']) },
+    { title: 'Settings', icon: '⚙️', action: () => this.router.navigate(['/account-settings']) },
+  ];
+
+  platformFeatureAnalytics = computed<FeatureAnalytics[]>(() => {
+    const totals = this.adminDashboard().totals || {};
+    const employeeCount = Number(totals.totalEmployees || 0);
+    const pendingLeaveCount = this.pendingLeaves().length;
+    const departments = this.departmentData().length;
+    const upcomingEvents = this.upcomingEvents().length;
+
+    return [
+      { title: 'Workspace', route: '/hr', score: Math.min(100, 70 + departments * 5), accent: '#2563eb', detail: 'Central workspace for recruitment, lifecycle, shifts, expenses, and reports' },
+      { title: 'Dashboard', route: '/dashboard', score: 100, accent: '#0f766e', detail: 'Executive summary, KPIs, actions, and analytics' },
+      { title: 'Employees', route: '/employees', score: Math.min(100, 60 + employeeCount * 3), accent: '#7c3aed', detail: `${employeeCount} employee records connected` },
+      { title: 'Attendance', route: '/attendance', score: Math.min(96, 58 + employeeCount * 2), accent: '#16a34a', detail: 'Presence, absenteeism, and workday visibility' },
+      { title: 'Leave', route: '/leave', score: Math.min(95, 55 + pendingLeaveCount * 7), accent: '#f59e0b', detail: `${pendingLeaveCount} pending leave workflows right now` },
+      { title: 'Payroll', route: '/payroll', score: Math.min(94, 62 + employeeCount * 2), accent: '#dc2626', detail: 'Payslips, uploads, and AI-assisted calculation' },
+      { title: 'Training', route: '/training', score: 82, accent: '#1d4ed8', detail: 'Learning plans, assignments, and progress tracking' },
+      { title: 'Feedback & Chat', route: '/feedback', score: 88, accent: '#9333ea', detail: 'Feedback capture plus fast live employee-admin messaging' },
+      { title: 'Events', route: '/events', score: Math.min(90, 50 + upcomingEvents * 10), accent: '#0ea5e9', detail: `${upcomingEvents} upcoming event touchpoints` },
+    ];
+  });
+
+  workflowStages = (): WorkflowStage[] => [
+    { title: '1. Admin lands on Dashboard', owner: 'ADM', summary: 'Leadership sees KPIs, pending approvals, department splits, and navigation coverage in one place.' },
+    { title: '2. Workspace drives operations', owner: 'OPS', summary: 'Recruitment, lifecycle, shifts, expenses, and reports are managed from the renamed Workspace hub.' },
+    { title: '3. Core HR modules execute', owner: 'HR', summary: 'Employees, attendance, leave, payroll, training, events, and feedback stay linked as daily execution modules.' },
+    { title: '4. Chat and alerts respond fast', owner: 'COM', summary: 'Notifications and live conversation updates keep admins and employees connected without manual refresh loops.' },
+    { title: '5. Payroll and analytics close the loop', owner: 'AI', summary: 'Uploads, AI-assisted payroll suggestions, and dashboard analytics help turn operational data into decisions.' },
+  ];
+
+  aiFeatureIdeas = (): Array<{ title: string; summary: string }> => [
+    { title: 'AI Payroll Assistant', summary: 'Suggests salary breakup, allowances, deductions, and import-ready calculations from employee salary structure.' },
+    { title: 'AI Hiring Insights', summary: 'Highlights recruitment bottlenecks, hiring funnel drop-off, and best sources directly from Workspace data.' },
+    { title: 'AI Workforce Health', summary: 'Surfaces leave spikes, absenteeism patterns, and department load imbalances for managers before issues grow.' },
+    { title: 'AI Employee Copilot', summary: 'Guides employees to the right module, answers policy questions, and recommends next actions across the website workflow.' },
   ];
 
   ngOnInit() {

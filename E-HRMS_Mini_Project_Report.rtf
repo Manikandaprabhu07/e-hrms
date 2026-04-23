@@ -1,0 +1,280 @@
+{\rtf1\ansi\deff0
+{\fonttbl
+{\f0 Times New Roman;}
+}
+\paperw11906\paperh16838\margl1440\margr1440\margt1440\margb1440
+\fs24
+\qc\b E-HRMS\par
+\fs28\b0 Enterprise Human Resource Management System\par
+\par
+\fs24 A Full College Mini-Project Report\par
+\par
+\ql\b Submitted by:\b0\par
+[Student Name]\par
+[Register Number]\par
+[Department Name]\par
+\par
+\b Submitted to:\b0\par
+[College Name]\par
+[University Name]\par
+\par
+\b In partial fulfillment of the requirements for the award of the degree of\b0\par
+[Degree Name]\par
+\par
+\b Academic Year:\b0 2025-2026\par
+\page
+\qc\b CERTIFICATE\par
+\par
+\ql\b0 This is to certify that the mini-project report entitled \b "E-HRMS - Enterprise Human Resource Management System" \b0 is a bonafide work carried out by \b [Student Name] \b0 bearing Register Number \b [Register Number] \b0 of the Department of \b [Department Name] \b0 at \b [College Name] \b0 during the academic year \b 2025-2026 \b0 in partial fulfillment of the requirements for the award of the degree of \b [Degree Name]\b0.\par
+\par
+\trowd\trgaph108\cellx3500\cellx7000\cellx10000
+\intbl \qc\b Internal Guide\cell Head of the Department\cell Principal\cell\row
+\par
+Date: __________\tab\tab\tab Place: __________\par
+\page
+\qc\b DECLARATION\par
+\par
+\ql\b0 I hereby declare that the mini-project report entitled \b "E-HRMS - Enterprise Human Resource Management System" \b0 submitted by me to \b [College Name] \b0 in partial fulfillment of the requirements for the award of the degree of \b [Degree Name] \b0 is a record of original work carried out by me under the guidance of \b [Guide Name], [Designation]\b0.\par
+\par
+I further declare that this report has not been submitted either in part or in full to any other university or institution for the award of any degree, diploma, or other academic qualification.\par
+\par
+Place: __________\par
+Date: __________\par
+\par
+\qr Signature of the Student\par
+\b [Student Name]\b0\par
+\page
+\qc\b ACKNOWLEDGEMENT\par
+\par
+\ql\b0 I express my sincere gratitude to \b [Principal Name]\b0, Principal of \b [College Name]\b0, for providing the facilities and academic environment necessary for the successful completion of this mini-project.\par
+\par
+I extend my heartfelt thanks to \b [HOD Name]\b0, Head of the Department of \b [Department Name]\b0, for the continuous encouragement and support provided throughout the course of this work.\par
+\par
+I am deeply indebted to my project guide, \b [Guide Name], [Designation]\b0, for the valuable guidance, constructive suggestions, and constant motivation that greatly helped me in the successful completion of this project.\par
+\par
+I also wish to thank all the teaching and non-teaching staff members of the department for their support. Finally, I convey my gratitude to my parents, friends, and well-wishers for their encouragement and support throughout the development of this project.\par
+\page
+\qc\b ABSTRACT\par
+\par
+\ql\b0 Human Resource Management is one of the most important functional areas in any organization because it directly influences employee records, attendance, payroll, leave administration, performance evaluation, communication, and workforce productivity. In many organizations, these activities are still managed through spreadsheets, paper-based workflows, or disconnected software tools. Such methods often result in duplicate records, delayed approvals, reduced transparency, and increased administrative burden. To address these problems, this mini-project presents the design and development of \b E-HRMS (Enterprise Human Resource Management System)\b0, a full-stack web-based application that centralizes major HR operations within a unified digital platform.\par
+\par
+The proposed system is developed using \b Angular 21 \b0 for the frontend, \b NestJS 11 \b0 for the backend, and \b PostgreSQL \b0 as the relational database. The application follows a modular architecture and supports different user roles, primarily \b Admin \b0 and \b Employee\b0. Administrators are provided with tools to manage employees, attendance, payroll, leave, training, performance, feedback, notifications, and internal communication. Employees are given self-service access to their profile, leave requests, attendance details, payroll records, assigned training, events, and feedback submission.\par
+\page
+\qc\b TABLE OF CONTENTS\par
+\par
+\ql 1. INTRODUCTION....................................................1\par
+2. LITERATURE REVIEW.................................................5\par
+3. SYSTEM DESIGN.....................................................9\par
+4. FUNCTIONALITIES..................................................15\par
+5. MODULE DESCRIPTION...............................................18\par
+6. IMPLEMENTATION...................................................25\par
+7. RESULTS AND SCREENSHOTS..........................................32\par
+8. CONCLUSION AND FUTURE ENHANCEMENTS...............................36\par
+REFERENCES.........................................................38\par
+APPENDIX...........................................................39\par
+\page
+\qc\b LIST OF FIGURES\par
+\par
+\ql Figure 1. System Architecture Diagram\par
+Figure 2. Login Page\par
+Figure 3. Admin Dashboard\par
+Figure 4. Employee Dashboard\par
+Figure 5. Employee List Screen\par
+Figure 6. Attendance and Leave Screens\par
+Figure 7. Payroll and Training Screens\par
+Figure 8. Notification and Chatbar Screen\par
+\page
+\qc\b LIST OF ABBREVIATIONS\par
+\par
+\ql E-HRMS - Enterprise Human Resource Management System\par
+HR - Human Resources\par
+UI - User Interface\par
+API - Application Programming Interface\par
+JWT - JSON Web Token\par
+RBAC - Role-Based Access Control\par
+ORM - Object Relational Mapping\par
+DBMS - Database Management System\par
+SSR - Server-Side Rendering\par
+CRUD - Create, Read, Update, Delete\par
+KPI - Key Performance Indicator\par
+\page
+\qc\b CHAPTER 1\par
+INTRODUCTION\par
+\par
+\ql\b 1.1 Background\par
+\b0 Human Resource Management plays a major role in ensuring the smooth functioning of an organization. It includes handling employee recruitment data, maintaining profiles, tracking attendance, managing salaries, approving leaves, monitoring training programs, evaluating performance, and supporting communication between staff and administration. As organizations grow, the number of employees and the complexity of their records also increase. In such situations, manual systems become inefficient and difficult to maintain.\par
+\par
+Traditional HR handling methods, such as spreadsheets, written registers, and separate standalone tools, create several operational challenges. Data may become inconsistent across departments, searching for employee information takes more time, approval workflows are delayed, and reporting becomes difficult. Moreover, when employees are unable to access their own attendance, leave balances, training assignments, or payroll details directly, the burden on HR administrators increases significantly.\par
+\par
+\b 1.2 Problem Statement\par
+\b0 Many existing HR environments rely on fragmented or partially automated systems. Employee records may be stored in one location, attendance tracked in another, and payroll handled manually or using separate software. This fragmentation creates problems such as repeated data entry, reporting delays, data mismatch, and lack of real-time visibility.\par
+\par
+\b 1.3 Objectives\par
+\b0 The primary objective of this project is to develop a web-based Human Resource Management System that integrates the major HR functions into one platform. The specific objectives are to centralize employee data, provide secure role-based access, support HR workflows such as attendance, leave, payroll, training, and performance, and improve communication through notifications and messaging.\par
+\par
+\b 1.4 Scope\par
+\b0 The scope of the E-HRMS project includes employee management, attendance, leave administration, payroll, training, performance evaluation, feedback, event scheduling, notifications, and messaging. The system is focused on two major roles: Admin and Employee.\par
+\page
+\qc\b CHAPTER 2\par
+LITERATURE REVIEW\par
+\par
+\ql\b 2.1 Existing System Overview\par
+\b0 Traditional HR systems in many organizations are either manual or semi-digital. Employee records may be maintained in spreadsheets, attendance may be marked through registers or standalone systems, and payroll may be processed separately using accounting tools. These systems are often not interconnected, leading to redundancy and poor coordination.\par
+\par
+\b 2.2 Review of Existing Tools and Approaches\par
+\b0 Modern application development uses modular frontend frameworks, structured backend APIs, and relational databases. Angular supports component-based responsive interfaces. NestJS provides a scalable backend structure with controllers, modules, and services. PostgreSQL offers strong relational data support, while JWT and bcrypt help secure authentication workflows.\par
+\par
+\b 2.3 Identified Gaps in Existing Systems\par
+\b0 Existing systems often fail to provide fully unified employee data, attendance, payroll, training, and communication within one platform. Smaller organizations also lack affordable and customizable software that offers strong role-based workflows and employee self-service.\par
+\par
+\b 2.4 Contribution of Proposed System\par
+\b0 The proposed E-HRMS contributes a modular full-stack HR platform with admin and employee dashboards, employee import through Excel, role-based access control, event and notification support, and internal communication features.\par
+\page
+\qc\b CHAPTER 3\par
+SYSTEM DESIGN\par
+\par
+\ql\b 3.1 System Architecture Overview\par
+\b0 The E-HRMS project follows a client-server architecture. The frontend is developed using Angular and is responsible for rendering the user interface, handling route navigation, processing forms, and interacting with backend APIs. The backend is built using NestJS and provides RESTful endpoints for all major HR functionalities. The application data is stored in PostgreSQL, with TypeORM entities representing the database schema.\par
+\par
+The architecture is organized in a modular manner. On the frontend, feature-specific routes and components are separated into folders such as employees, attendance, leave, payroll, performance, and dashboard. On the backend, modules such as auth, employees, leave, attendance, payroll, training, performance, dashboard, events, notifications, and messages are separately maintained.\par
+\par
+\b 3.2 Technology Stack\par
+\b0 The frontend of the system is built using Angular 21, TypeScript, Angular Router, Reactive Forms, RxJS, Angular Material, TailwindCSS, and Carbon styles. The backend is developed using NestJS 11, TypeScript, TypeORM, PostgreSQL, Passport JWT, bcrypt, class-validator, and xlsx for Excel import.\par
+\par
+\b 3.3 Frontend Design and UI Flow\par
+\b0 The frontend application is designed to provide different experiences for different user roles. The login page allows users to sign in with email or employee credentials. Once authenticated, users are redirected to the main layout, which contains a sidebar, top header, search area, theme switching, user controls, and a chatbar entry point.\par
+\par
+The dashboard is role-sensitive. Admin users are presented with KPIs such as total employees, new hires, pending leave requests, department distributions, recent activity, and upcoming events. Employee users see leave summaries, attendance status, assigned training progress, upcoming events, and profile information.\par
+\par
+\b 3.4 Backend Design and Logic\par
+\b0 The backend is built using NestJS with well-separated modules, controllers, services, and entities. Controllers expose HTTP endpoints, while services handle business logic, database operations, and domain rules. The main application module imports all major modules and configures global providers such as JWT authentication guard and role guard.\par
+\par
+\b 3.5 Database Design and Schema\par
+\b0 The database design is centered on relational consistency. The users table manages login credentials and role assignments. The employees table contains HR profile data including employee ID, department, designation, work mode, salary, status, documents, and linkage to a login user. Additional operational tables include attendance, leaves, payroll, performance, trainings, training assignments, notifications, conversations, messages, feedback, and events.\par
+\par
+\b 3.6 Security and Access Control\par
+\b0 Security is implemented using JWT-based authentication, backend guards, frontend route guards, and role checks for ADMIN and EMPLOYEE access. Passwords are stored securely using bcrypt hashing, and protected frontend API calls automatically attach the access token through an interceptor.\par
+\page
+\qc\b CHAPTER 4\par
+FUNCTIONALITIES\par
+\par
+\ql\b 4.1 Employee Features\par
+\b0 The system provides several self-service features for employees. They can securely log in, view their personal dashboard, access their profile, track leave requests, see attendance records, review payroll entries, monitor assigned trainings, and view upcoming events. Employees can also send feedback to the administration and participate in internal conversations when enabled.\par
+\par
+\b 4.2 Admin Features\par
+\b0 Administrators are given broad management capabilities in the system. They can create, update, and delete employee records, link employees with user accounts, import employee information from Excel, record attendance, manage payroll entries, review leave requests, assign training programs, track performance records, publish events, and monitor dashboard analytics.\par
+\par
+\b 4.3 Additional Features\par
+\b0 The project also includes global search across routes and employee data, theme switching, chatbar-based message and notification overview, seeded default roles and events, activity summaries, event management, and support for employee documents and profile images.\par
+\page
+\qc\b CHAPTER 5\par
+MODULE DESCRIPTION\par
+\par
+\ql\b 5.1 List of Modules\par
+\b0 The project contains the following core modules: Authentication, User and Access Control, Employee Management, Attendance, Leave Management, Payroll, Training, Performance, Dashboard, Feedback, Events, Notifications, Messages, and Chatbar.\par
+\par
+\b 5.2 Employee Management Module\par
+\b0 This module manages employee records such as employee ID, name, email, phone number, department, designation, employment type, salary, shift type, joining date, status, images, and documents. It also supports employee login account creation and Excel-based employee import.\par
+\par
+\b 5.3 Attendance and Leave Module\par
+\b0 The attendance module is used by administrators to create and manage daily attendance records for employees. The leave module supports leave request creation, tracking, approval, and rejection workflows for admin and employee roles.\par
+\par
+\b 5.4 Payroll Module\par
+\b0 The payroll module stores month-wise salary records for employees including basic salary, allowances, deductions, net salary, payment status, and payment date. Admins manage payroll entries, while employees can view their own payroll details.\par
+\par
+\b 5.5 Training and Performance Module\par
+\b0 The training module allows administrators to create training programs, define schedules, assign employees, and monitor progress. The performance module manages employee review periods, ratings, goals, achievements, reviewer details, and feedback.\par
+\par
+\b 5.6 Communication and Notification Module\par
+\b0 The communication side of the application includes events, notifications, messages, and chatbar overview. Events can be created by admins and viewed by all authenticated users. Notifications are targeted to users, and the messaging module supports admin-employee conversations with unread tracking.\par
+\par
+\b 5.7 Authentication and Access Control Module\par
+\b0 The authentication module handles login, registration, admin registration, profile retrieval, password change, and email change. The access control module defines roles and permissions and enforces secure route-level restrictions.\par
+\page
+\qc\b CHAPTER 6\par
+IMPLEMENTATION\par
+\par
+\ql\b 6.1 Frontend Implementation\par
+\b0 The frontend is implemented using Angular with standalone components and modular feature routes. Each major area of the system is isolated into its own feature folder, such as employees, attendance, payroll, leave, dashboard, performance, and training. Shared components like sidebar, toast, pagination, user menu, layout, and chatbar improve consistency across screens.\par
+\par
+\b 6.2 Backend Implementation\par
+\b0 The backend uses NestJS to implement a structured API layer. Controllers define endpoints such as /auth, /employees, /leave, /attendance, /payroll, /training, /performance, /events, /notifications, and /messages. Services contain the logic for data access, validation, and coordination between modules.\par
+\par
+\b 6.3 Database Implementation\par
+\b0 The database is implemented using PostgreSQL with TypeORM. Entities define the schema and relationships, and autoLoadEntities is enabled to simplify configuration. The application supports both individual database credentials and a DATABASE_URL style connection string.\par
+\par
+\b 6.4 File and Document Storage Implementation\par
+\b0 The current implementation stores employee-related images and documents within database-backed fields. The employee entity includes text fields for avatar and profile photo, and a JSON-based structure for document metadata and content URLs. The system also supports Excel uploads for bulk employee import.\par
+\par
+\b 6.5 Authentication Implementation\par
+\b0 Authentication is implemented through NestJS JWT integration and Angular local token management. During login, the backend validates the user's credentials through bcrypt password comparison and creates a signed JWT token containing identity and role information. On the frontend, this token is stored in local storage and reused for authenticated requests.\par
+\par
+\b 6.6 Deployment\par
+\b0 The project includes development and deployment-oriented configuration. Angular uses a proxy configuration to redirect /api traffic to the backend during local development. Deployment configuration indicates frontend hosting with API rewrites to a hosted backend endpoint.\par
+\par
+\b 6.7 Challenges Faced\par
+\b0 Developing an HRMS involves handling multiple interconnected modules while maintaining consistency across roles and workflows. Major challenges include linking employee records with user authentication data, keeping frontend and backend permissions aligned, handling Excel imports safely, and designing a schema for multiple HR operations.\par
+\page
+\qc\b CHAPTER 7\par
+RESULTS AND SCREENSHOTS\par
+\par
+\ql\b 7.1 Login and Dashboard Screens\par
+\b0 The system successfully provides a modern login interface and two differentiated dashboard experiences. The admin dashboard displays organizational insights such as employee counts, new hires, exits, pending leave requests, department distributions, and event management tools. The employee dashboard displays personal leave statistics, attendance summary, training progress, upcoming events, and profile details.\par
+\par
+\b 7.2 Employee and Admin Module Screens\par
+\b0 The employee management screens support listing, detail view, and form-based create or update operations. The attendance and leave screens allow record management and workflow tracking. Payroll and training screens show structured record handling for HR operations.\par
+\par
+\b 7.3 Functional Outcomes\par
+\b0 The completed application supports secure authentication, employee profile management, attendance maintenance, leave submission and review, payroll record handling, training progress tracking, performance review, notifications, events, and messaging.\par
+\par
+\b 7.4 Observed Benefits\par
+\b0 The system reduces manual workload by centralizing different HR operations into a single interface. It improves consistency because employee data and related records are stored in one relational database. The role-based dashboard and modular design also improve decision-making and user experience.\par
+\page
+\qc\b CHAPTER 8\par
+CONCLUSION AND FUTURE ENHANCEMENTS\par
+\par
+\ql\b 8.1 Conclusion\par
+\b0 The E-HRMS mini-project successfully demonstrates the design and implementation of a modern, secure, and modular Human Resource Management System. By using Angular for the frontend, NestJS for the backend, and PostgreSQL for the database, the project provides a strong full-stack architecture suitable for real-world HR workflows.\par
+\par
+The application integrates several essential HR functions such as employee management, attendance, leave, payroll, training, performance, events, notifications, and messaging into a single platform. As a mini-project, it provides substantial practical value and a strong foundation for further enhancement.\par
+\par
+\b 8.2 Future Enhancement\par
+\b0 Although the current implementation is comprehensive, several improvements can be added in future versions. These include refresh-token based authentication, PDF payslip generation, advanced analytics dashboards, exportable reports, audit logging, biometric attendance integration, email and SMS notifications, stronger automated testing, and database migrations for safer production deployment.\par
+\page
+\qc\b REFERENCES\par
+\par
+\ql 1. Angular Official Documentation.\par
+2. NestJS Official Documentation.\par
+3. PostgreSQL Official Documentation.\par
+4. TypeORM Official Documentation.\par
+5. Passport JWT Documentation.\par
+6. bcrypt Documentation.\par
+7. XLSX Library Documentation.\par
+8. TypeScript Official Documentation.\par
+9. RxJS Official Documentation.\par
+\page
+\qc\b APPENDIX\par
+\par
+\ql\b Appendix A: Project Structure Summary\par
+\b0 Frontend folders include src/app/core, src/app/shared, and src/app/features. Feature areas include auth, dashboard, employees, attendance, leave, payroll, performance, training, events, activity, feedback, and account-settings.\par
+\par
+Backend modules include auth, access, users, employees, attendance, leave, payroll, performance, training, dashboard, events, feedback, notifications, messages, chatbar, and seed.\par
+\par
+\b Appendix B: Major Database Entities\par
+\b0 Users, Roles, Permissions, Employees, Attendance, Leaves, Payroll, Performance, Trainings, TrainingAssignments, Feedback, Events, Notifications, Conversations, and Messages.\par
+\par
+\b Appendix C: Suggested Screenshots to Insert\par
+\b0 1. Login Page\par
+2. Admin Dashboard\par
+3. Employee Dashboard\par
+4. Employee List\par
+5. Add/Edit Employee Form\par
+6. Attendance Screen\par
+7. Leave Screen\par
+8. Payroll Screen\par
+9. Training Screen\par
+10. Event/Notification Screen\par
+\par
+\b Appendix D: Environment and Deployment Notes\par
+\b0 The frontend uses an Angular proxy during development to connect /api requests to the backend server. The deployment configuration indicates frontend hosting with API rewriting to a hosted backend endpoint.\par
+}

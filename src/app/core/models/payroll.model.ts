@@ -90,3 +90,17 @@ export interface Bonus {
   disbursementDate: Date;
   status: 'pending' | 'approved' | 'disbursed' | 'cancelled';
 }
+
+export interface PayrollImportPreview {
+  employeeId: string;
+  employeeName?: string;
+  month: string;
+  year: number;
+  basicSalary: number;
+  allowances: number;
+  deductions: number;
+  netSalary: number;
+  paymentStatus: string;
+  paymentDate?: string | null;
+  aiInsight?: string;
+}

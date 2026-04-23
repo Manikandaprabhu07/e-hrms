@@ -314,6 +314,7 @@ export class ChatbarComponent implements OnInit {
 
   draft = '';
   sending = signal(false);
+  private messageStream: EventSource | null = null;
 
   myUserId = computed(() => this.authService.user()?.id || '');
   isAdmin = computed(() => this.authService.hasRole('ADMIN'));
@@ -346,11 +347,16 @@ export class ChatbarComponent implements OnInit {
       void this.loadNotifications();
       void this.ensureConversationLoaded();
       void this.chatbarService.loadOverview();
+    } else {
+      this.disconnectMessageStream();
     }
   }
 
   setTab(t: 'notifications' | 'messages'): void {
     this.tab.set(t);
+    if (t !== 'messages') {
+      this.disconnectMessageStream();
+    }
     if (this.open()) {
       if (t === 'notifications') void this.loadNotifications();
       else void this.ensureConversationLoaded();
@@ -440,6 +446,7 @@ export class ChatbarComponent implements OnInit {
     if (!id) return;
     this.conversationId.set(id);
     this.selectedConversationId = id;
+    this.disconnectMessageStream();
     void this.loadMessages();
   }
 
@@ -462,6 +469,7 @@ export class ChatbarComponent implements OnInit {
       this.messages.set(msgs || []);
       await this.chatbarService.markConversationRead(id);
       await this.chatbarService.loadOverview();
+      this.connectMessageStream(id);
     } finally {
       this.msgLoading.set(false);
     }
@@ -475,9 +483,59 @@ export class ChatbarComponent implements OnInit {
       this.sending.set(true);
       await this.chatbarService.sendMessage(id, text);
       this.draft = '';
-      await this.loadMessages();
+      await this.chatbarService.loadOverview();
     } finally {
       this.sending.set(false);
+    }
+  }
+
+  private connectMessageStream(conversationId: string): void {
+    if (!this.open() || this.tab() !== 'messages') {
+      return;
+    }
+
+    const url = this.chatbarService.getConversationStreamUrl(conversationId);
+    if (!url) {
+      return;
+    }
+
+    this.disconnectMessageStream();
+    this.messageStream = new EventSource(url);
+
+    this.messageStream.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload?.type !== 'message' || !payload.message) {
+          return;
+        }
+
+        const incoming = payload.message;
+        this.messages.update((current) => {
+          if (current.some((item) => item.id === incoming.id)) {
+            return current;
+          }
+          return [...current, incoming];
+        });
+
+        if (incoming.senderUserId !== this.myUserId()) {
+          void this.chatbarService.markConversationRead(conversationId);
+        }
+
+        void this.chatbarService.loadOverview();
+      } catch {
+        // ignore malformed stream events
+      }
+    };
+
+    this.messageStream.onerror = () => {
+      this.disconnectMessageStream();
+    };
+  }
+
+  private disconnectMessageStream(): void {
+    if (this.messageStream) {
+      this.messageStream.close();
+      this.messageStream = null;
     }
   }
 

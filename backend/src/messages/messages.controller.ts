@@ -1,10 +1,18 @@
-import { Body, Controller, Get, Param, Patch, Post, Request } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Request, Sse, UnauthorizedException } from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { MessagesService } from './messages.service';
+import { Public } from '../auth/decorators/public.decorator';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { getJwtSecret } from '../auth/jwt-secret';
 
 @Controller('messages')
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) { }
+  constructor(
+    private readonly messagesService: MessagesService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) { }
 
   @Get('my/conversations')
   @Roles('ADMIN', 'EMPLOYEE')
@@ -42,5 +50,21 @@ export class MessagesController {
   send(@Request() req: any, @Param('id') id: string, @Body() body: any) {
     return this.messagesService.sendMessage(id, req.user.id, body.content);
   }
-}
 
+  @Sse('conversations/:id/stream')
+  @Public()
+  async stream(@Param('id') id: string, @Query('token') token?: string) {
+    if (!token) {
+      throw new UnauthorizedException('Access token is required');
+    }
+
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: getJwtSecret(this.configService),
+      });
+      return this.messagesService.getConversationStream(id, payload.sub);
+    } catch {
+      throw new UnauthorizedException('Invalid access token');
+    }
+  }
+}

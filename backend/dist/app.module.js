@@ -27,6 +27,8 @@ const events_module_1 = require("./events/events.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const messages_module_1 = require("./messages/messages.module");
 const chatbar_module_1 = require("./chatbar/chatbar.module");
+const hr_operations_module_1 = require("./hr-operations/hr-operations.module");
+const recruitment_module_1 = require("./recruitment/recruitment.module");
 const core_1 = require("@nestjs/core");
 const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("./auth/guards/roles.guard");
@@ -108,6 +110,8 @@ exports.AppModule = AppModule = __decorate([
             notifications_module_1.NotificationsModule,
             messages_module_1.MessagesModule,
             chatbar_module_1.ChatbarModule,
+            hr_operations_module_1.HrOperationsModule,
+            recruitment_module_1.RecruitmentModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

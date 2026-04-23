@@ -18,6 +18,8 @@ import { EventsModule } from './events/events.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { MessagesModule } from './messages/messages.module';
 import { ChatbarModule } from './chatbar/chatbar.module';
+import { HrOperationsModule } from './hr-operations/hr-operations.module';
+import { RecruitmentModule } from './recruitment/recruitment.module';
 
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -101,6 +103,8 @@ import { SeedService } from './seed/seed.service';
     NotificationsModule,
     MessagesModule,
     ChatbarModule,
+    HrOperationsModule,
+    RecruitmentModule,
   ],
   controllers: [AppController],
   providers: [

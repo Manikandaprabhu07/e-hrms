@@ -4,6 +4,7 @@ import { LoadingSpinnerComponent, CardComponent } from '../../shared/components'
 import { PayrollService, AuthService, EmployeeService } from '../../core/services';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { PayrollImportPreview } from '../../core/models';
 
 interface PayrollRecord {
   id: string;
@@ -32,6 +33,16 @@ interface PayrollRecord {
       <app-card [elevated]="true">
         @if (isAdmin()) {
           <div class="toolbar">
+            <input
+              #payrollExcelInput
+              type="file"
+              accept=".xlsx,.xls"
+              class="hidden-file-input"
+              (change)="onPayrollFileSelected($event)"
+            />
+            <button class="btn btn-secondary upload-btn" (click)="payrollExcelInput.click()" [disabled]="isUploadingPreview() || isSavingImport()">
+              {{ isUploadingPreview() ? 'Uploading...' : 'Upload Payroll' }}
+            </button>
             <button class="btn btn-primary" (click)="toggleForm()">
               {{ showForm() ? 'Close' : '+ Add Payroll' }}
             </button>
@@ -60,6 +71,13 @@ interface PayrollRecord {
                 <label>Basic Salary</label>
                 <input type="number" [(ngModel)]="form.basicSalary" />
               </div>
+              <div class="form-group ai-group">
+                <label>AI Payroll Assistant</label>
+                <button class="btn btn-secondary ai-btn" type="button" (click)="applyAiPayrollAssist()" [disabled]="!canRunAiAssist()">
+                  Auto Calculate
+                </button>
+                <small>Uses employee salary to suggest allowances and deductions.</small>
+              </div>
               <div class="form-group">
                 <label>Allowances</label>
                 <input type="number" [(ngModel)]="form.allowances" />
@@ -80,12 +98,65 @@ interface PayrollRecord {
                 <label>Payment Date</label>
                 <input type="date" [(ngModel)]="form.paymentDate" />
               </div>
+              <div class="form-group">
+                <label>AI Net Salary Preview</label>
+                <input type="text" [value]="'₹' + (calculatedNetSalary() | number:'1.0-2')" readonly />
+                <small>{{ aiInsight() }}</small>
+              </div>
               <div class="form-actions">
                 <button class="btn btn-primary" (click)="savePayroll()">{{ editingId() ? 'Update' : 'Save' }}</button>
                 <button class="btn btn-secondary" (click)="resetForm()">Reset</button>
               </div>
             </div>
           }
+        }
+
+        @if (previewData().length > 0) {
+          <div class="preview-block">
+            <div class="preview-header">
+              <div>
+                <h2>Payroll Import Preview</h2>
+                <p class="subtitle">{{ previewData().length }} rows ready to save</p>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-secondary" (click)="clearPreview()" [disabled]="isSavingImport()">Clear</button>
+                <button class="btn btn-primary" (click)="saveImportedPayroll()" [disabled]="isSavingImport()">
+                  {{ isSavingImport() ? 'Saving...' : 'Save Payroll Rows' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive preview-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee ID</th>
+                    <th>Month</th>
+                    <th>Basic</th>
+                    <th>Allowances</th>
+                    <th>Deductions</th>
+                    <th>Net</th>
+                    <th>Status</th>
+                    <th>AI Insight</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of previewData(); track row.employeeId + row.month + row.year) {
+                    <tr>
+                      <td>{{ row.employeeId }}</td>
+                      <td>{{ row.month }} {{ row.year }}</td>
+                      <td>₹{{ row.basicSalary | number }}</td>
+                      <td>₹{{ row.allowances | number }}</td>
+                      <td>₹{{ row.deductions | number }}</td>
+                      <td><span class="net-salary">₹{{ row.netSalary | number }}</span></td>
+                      <td>{{ row.paymentStatus }}</td>
+                      <td>{{ row.aiInsight }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
         }
         <app-loading-spinner [isLoading]="isLoading()" message="Loading payroll data..." />
         
@@ -215,7 +286,20 @@ interface PayrollRecord {
     .toolbar {
       display: flex;
       justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
       margin-bottom: 12px;
+    }
+
+    .hidden-file-input {
+      display: none;
+    }
+
+    .upload-btn {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      color: #1d4ed8;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      font-weight: 700;
     }
 
     .form-grid {
@@ -243,6 +327,51 @@ interface PayrollRecord {
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.9);
       outline: none;
+    }
+
+    .form-group small {
+      display: block;
+      margin-top: 6px;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .ai-group {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .ai-btn {
+      width: 100%;
+      padding: 10px 12px;
+      font-weight: 700;
+    }
+
+    .preview-block {
+      padding: 10px 0 18px 0;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 12px;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .preview-header h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #1e293b;
+    }
+
+    .preview-table {
+      height: auto;
+      max-height: 320px;
     }
 
     .form-actions {
@@ -456,6 +585,10 @@ export class PayrollListComponent implements OnInit {
   payrollRecords = signal<PayrollRecord[]>([]);
   employees = signal<any[]>([]);
   selectedSlip = signal<PayrollRecord | null>(null);
+  previewData = signal<PayrollImportPreview[]>([]);
+  isUploadingPreview = signal(false);
+  isSavingImport = signal(false);
+  aiInsight = signal('AI can suggest payroll values from the employee salary structure.');
 
   isAdmin = computed(() => this.authService.hasRole('ADMIN'));
 
@@ -545,6 +678,7 @@ export class PayrollListComponent implements OnInit {
     this.form.deductions = record.deductions;
     this.form.paymentStatus = record.status === 'Paid' ? 'Paid' : 'Pending';
     this.form.paymentDate = record.paymentDate || '';
+    this.aiInsight.set('Manual values loaded from an existing payroll record.');
   }
 
   async savePayroll(): Promise<void> {
@@ -564,6 +698,7 @@ export class PayrollListComponent implements OnInit {
       basicSalary: Number(this.form.basicSalary || 0),
       allowances: Number(this.form.allowances || 0),
       deductions: Number(this.form.deductions || 0),
+      netSalary: this.calculatedNetSalary(),
       paymentStatus: this.form.paymentStatus,
       paymentDate: this.form.paymentDate || null,
     };
@@ -591,6 +726,7 @@ export class PayrollListComponent implements OnInit {
       paymentStatus: 'Pending',
       paymentDate: '',
     };
+    this.aiInsight.set('AI can suggest payroll values from the employee salary structure.');
   }
 
   viewSlip(record: PayrollRecord): void {
@@ -603,5 +739,77 @@ export class PayrollListComponent implements OnInit {
 
   getStatusClass(status: string): string {
     return status.toLowerCase();
+  }
+
+  calculatedNetSalary(): number {
+    return Number(this.form.basicSalary || 0) + Number(this.form.allowances || 0) - Number(this.form.deductions || 0);
+  }
+
+  canRunAiAssist(): boolean {
+    return !!(this.form.employeeId || this.editingId());
+  }
+
+  applyAiPayrollAssist(): void {
+    const employee = (this.employees() || []).find((item: any) => item.id === this.form.employeeId);
+    const baseSalary = Number(employee?.salary || this.form.basicSalary || 0);
+
+    if (!baseSalary) {
+      alert('Select an employee with a salary before using AI payroll assist.');
+      return;
+    }
+
+    this.form.basicSalary = baseSalary;
+    this.form.allowances = Math.round(baseSalary * 0.2);
+    this.form.deductions = Math.round((this.form.basicSalary + this.form.allowances) * 0.08);
+    this.aiInsight.set('AI payroll assistant used the employee salary and suggested a 20% allowance with an 8% deduction profile.');
+  }
+
+  async onPayrollFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    this.isUploadingPreview.set(true);
+
+    try {
+      const preview = await this.payrollService.uploadPayrollPreview(file);
+      this.previewData.set(preview);
+      if (preview.length === 0) {
+        alert('No valid payroll rows were found in the uploaded file.');
+      }
+    } catch (error) {
+      console.error('Error generating payroll preview:', error);
+      alert('Failed to generate payroll preview.');
+    } finally {
+      this.isUploadingPreview.set(false);
+      input.value = '';
+    }
+  }
+
+  clearPreview(): void {
+    this.previewData.set([]);
+  }
+
+  async saveImportedPayroll(): Promise<void> {
+    if (this.previewData().length === 0) {
+      return;
+    }
+
+    this.isSavingImport.set(true);
+
+    try {
+      const response = await this.payrollService.saveImportedPayroll(this.previewData());
+      await this.loadPayroll();
+      this.previewData.set([]);
+      alert(`${response.message} Saved: ${response.saved}, Skipped: ${response.skipped}.`);
+    } catch (error) {
+      console.error('Error saving payroll import:', error);
+      alert('Failed to save imported payroll rows.');
+    } finally {
+      this.isSavingImport.set(false);
+    }
   }
 }

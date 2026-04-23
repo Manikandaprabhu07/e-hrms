@@ -13,4 +13,29 @@ export declare class PayrollService {
     createForEmployee(input: any): Promise<Payroll>;
     update(id: string, payrollData: Partial<Payroll>): Promise<Payroll>;
     remove(id: string): Promise<void>;
+    uploadPreview(file?: {
+        buffer?: Buffer;
+    }): {
+        employeeId: string;
+        month: string;
+        year: number;
+        basicSalary: number;
+        allowances: number;
+        deductions: number;
+        netSalary: number;
+        paymentStatus: string;
+        paymentDate: string | null;
+        aiInsight: string;
+    }[];
+    saveImportedPayroll(rows: any[]): Promise<{
+        message: string;
+        saved: number;
+        skipped: number;
+    }>;
+    private mapImportRow;
+    private normalizeImportedPayrollRow;
+    private buildPayrollMetrics;
+    private stringValue;
+    private numberValue;
+    private normalizeDateString;
 }

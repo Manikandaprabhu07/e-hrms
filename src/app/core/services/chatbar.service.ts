@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { AuthService } from './auth.service';
 
 export interface ChatbarOverview {
   unreadNotifications: number;
@@ -39,6 +40,7 @@ export interface ApiMessage {
 @Injectable({ providedIn: 'root' })
 export class ChatbarService {
   private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
   private openSignal = signal<boolean>(false);
   isOpen = this.openSignal.asReadonly();
@@ -97,5 +99,14 @@ export class ChatbarService {
 
   sendMessage(conversationId: string, content: string): Promise<ApiMessage> {
     return firstValueFrom(this.http.post<ApiMessage>(`/api/messages/conversations/${conversationId}`, { content })) as any;
+  }
+
+  getConversationStreamUrl(conversationId: string): string | null {
+    const token = this.authService.accessToken();
+    if (!token) {
+      return null;
+    }
+
+    return `/api/messages/conversations/${conversationId}/stream?token=${encodeURIComponent(token)}`;
   }
 }

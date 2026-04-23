@@ -21,6 +21,8 @@ const message_entity_1 = require("./entities/message.entity");
 const users_service_1 = require("../users/users.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const employees_service_1 = require("../employees/employees.service");
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
 let MessagesService = class MessagesService {
     constructor(conversationsRepository, messagesRepository, usersService, employeesService, notificationsService) {
         this.conversationsRepository = conversationsRepository;
@@ -29,6 +31,7 @@ let MessagesService = class MessagesService {
         this.employeesService = employeesService;
         this.notificationsService = notificationsService;
         this.cachedAdminUserId = null;
+        this.conversationStreams = new Map();
     }
     async getAdminUserId() {
         if (this.cachedAdminUserId)
@@ -115,6 +118,15 @@ let MessagesService = class MessagesService {
             await this.messagesRepository.update({ conversation: { id: conversationId } }, { unreadForEmployee: false });
         }
     }
+    async getConversationStream(conversationId, userId) {
+        await this.assertMember(conversationId, userId);
+        const stream = this.ensureConversationSubject(conversationId);
+        return stream.asObservable().pipe((0, operators_1.startWith)({
+            type: 'connected',
+            conversationId,
+            timestamp: new Date().toISOString(),
+        }), (0, operators_1.map)((event) => ({ data: event })));
+    }
     async sendMessage(conversationId, userId, content) {
         const conv = await this.assertMember(conversationId, userId);
         const trimmed = String(content || '').trim();
@@ -139,7 +151,20 @@ let MessagesService = class MessagesService {
             link: '/dashboard',
             meta: { conversationId: conv.id },
         });
+        this.ensureConversationSubject(conv.id).next({
+            type: 'message',
+            conversationId: conv.id,
+            message: saved,
+        });
         return saved;
+    }
+    ensureConversationSubject(conversationId) {
+        let stream = this.conversationStreams.get(conversationId);
+        if (!stream) {
+            stream = new rxjs_1.Subject();
+            this.conversationStreams.set(conversationId, stream);
+        }
+        return stream;
     }
 };
 exports.MessagesService = MessagesService;
